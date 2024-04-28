@@ -1,117 +1,100 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox
-import sqlite3
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap, QPainter, QColor  # Добавляем QColor для работы с цветами
 
-
-class DatabaseManager:
-    def __init__(self, db_name):
-        self.connection = sqlite3.connect(db_name)
-        self.cursor = self.connection.cursor()
-        self.create_table()
-
-    def create_table(self):
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS users 
-                               (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)''')
-        self.connection.commit()
-
-    def add_user(self, name, age):
-        self.cursor.execute('''INSERT INTO users (name, age) VALUES (?, ?)''', (name, age))
-        self.connection.commit()
-
-    def search_users_by_name(self, name):
-        self.cursor.execute('''SELECT * FROM users WHERE name LIKE ?''', ('%' + name + '%',))
-        return self.cursor.fetchall()
-
-    def get_all_users(self):
-        self.cursor.execute('''SELECT * FROM users''')
-        return self.cursor.fetchall()
-
-
-class UserInputApp(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("User Input")
-        self.db_manager = DatabaseManager("user_data.db")
-        self.init_ui()
+        self.setWindowTitle("Группы кнопок")
+        self.setMinimumSize(1000, 600)
 
-    def init_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        layout = QVBoxLayout(central_widget)
+        self.setStyleSheet("""
+                    QMainWindow {
+                        background-color: #404040; /* черно-серый цвет фона */
+                    }
+                    QPushButton {
+                        background-color: #808080; /* серый цвет кнопок */
+                        color: white; /* белый цвет текста на кнопках */
+                        border-radius: 5px; /* скругление углов кнопок */
+                        padding: 10px; /* отступ вокруг текста кнопок */
+                        border: none; /* убираем границу кнопок */
+                        box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5); /* тень от кнопок */
+                    }
+                    QPushButton:hover {
+                        background-color: #606060; /* изменение цвета при наведении на кнопку */
+                    }
+                    QLabel {
+                        color: white; /* устанавливаем белый цвет текста на иконках */
+                    }
+                """)
 
-        # Name input
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Name:"))
-        self.name_input = QLineEdit()
-        name_layout.addWidget(self.name_input)
-        layout.addLayout(name_layout)
+        main_layout = QHBoxLayout(central_widget)
 
-        # Age input
-        age_layout = QHBoxLayout()
-        age_layout.addWidget(QLabel("Age:"))
-        self.age_input = QLineEdit()
-        age_layout.addWidget(self.age_input)
-        layout.addLayout(age_layout)
+        # Группа 1
+        group1_layout = QVBoxLayout()
+        group1_layout.setSpacing(50)
+        icon1_widget = QLabel()
+        icon1_widget.setAlignment(Qt.AlignCenter)
+        icon1_pixmap = QPixmap("icons/pc.svg").scaled(150, 150)  # Изменяем размер иконки на 150x150 пикселей
+        icon1_pixmap = self.change_pixmap_color(icon1_pixmap, QColor("#8a2be2"))  # Изменяем цвет заливки иконки на темно-фиолетовый
+        icon1_widget.setPixmap(icon1_pixmap)  # Устанавливаем изображение на QLabel
+        button1_1 = QPushButton("Кнопка 1")
+        button1_1.setFixedSize(250, 50)
+        button1_1.clicked.connect(self.print_window_size)
+        group1_layout.addWidget(icon1_widget)
+        group1_layout.addWidget(button1_1)
+        group1_layout.setAlignment(Qt.AlignCenter)  # Выравниваем содержимое по центру
+        main_layout.addLayout(group1_layout)
+        main_layout.addSpacing(30)
 
-        # Submit button
-        self.submit_button = QPushButton("Submit")
-        self.submit_button.clicked.connect(self.save_user_data)
-        layout.addWidget(self.submit_button)
+        # Группа 2
+        group2_layout = QVBoxLayout()
+        group2_layout.setSpacing(50)
+        icon2_widget = QLabel()
+        icon2_widget.setAlignment(Qt.AlignCenter)
+        icon2_pixmap = QPixmap("icons/network.svg").scaled(150, 150)  # Изменяем размер иконки на 150x150 пикселей
+        icon2_pixmap = self.change_pixmap_color(icon2_pixmap, QColor("#8a2be2"))  # Изменяем цвет заливки иконки на темно-фиолетовый
+        icon2_widget.setPixmap(icon2_pixmap)  # Устанавливаем изображение на QLabel
+        button2_1 = QPushButton("Кнопка 2")
+        button2_1.setFixedSize(250, 50)
+        group2_layout.addWidget(icon2_widget)
+        group2_layout.addWidget(button2_1)
+        group2_layout.setAlignment(Qt.AlignCenter)  # Выравниваем содержимое по центру
+        main_layout.addLayout(group2_layout)
+        main_layout.addSpacing(30)
 
-        # Search input
-        search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel("Search by Name:"))
-        self.search_input = QLineEdit()
-        search_layout.addWidget(self.search_input)
-        layout.addLayout(search_layout)
+        # Группа 3
+        group3_layout = QVBoxLayout()
+        group3_layout.setSpacing(50)
+        icon3_widget = QLabel()
+        icon3_widget.setAlignment(Qt.AlignCenter)
+        icon3_pixmap = QPixmap("icons/internet.svg").scaled(150, 150)  # Изменяем размер иконки на 150x150 пикселей
+        icon3_pixmap = self.change_pixmap_color(icon3_pixmap, QColor("#8a2be2"))  # Изменяем цвет заливки иконки на темно-фиолетовый
+        icon3_widget.setPixmap(icon3_pixmap)  # Устанавливаем изображение на QLabel
+        button3_1 = QPushButton("Кнопка 3")
+        button3_1.setFixedSize(250, 50)
+        group3_layout.addWidget(icon3_widget)
+        group3_layout.addWidget(button3_1)
+        group3_layout.setAlignment(Qt.AlignCenter)  # Выравниваем содержимое по центру
+        main_layout.addLayout(group3_layout)
 
-        # Search button
-        self.search_button = QPushButton("Search")
-        self.search_button.clicked.connect(self.search_user_data)
-        layout.addWidget(self.search_button)
+    def change_pixmap_color(self, pixmap, color):
+        painter = QPainter(pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(pixmap.rect(), color)
+        painter.end()
+        return pixmap
 
-        # Show all button
-        self.show_all_button = QPushButton("Show All")
-        self.show_all_button.clicked.connect(self.show_all_users)
-        layout.addWidget(self.show_all_button)
+    def print_window_size(self):
+        window_size = self.size()  # Получаем размеры окна
+        print(f"Текущие размеры окна: {window_size.width()}x{window_size.height()}")
 
-    def save_user_data(self):
-        name = self.name_input.text()
-        age = self.age_input.text()
-        if name and age:
-            try:
-                age = int(age)
-                self.db_manager.add_user(name, age)
-                QMessageBox.information(self, "Success", "User data saved successfully!")
-                self.name_input.clear()
-                self.age_input.clear()
-            except ValueError:
-                QMessageBox.warning(self, "Error", "Age must be a number.")
-        else:
-            QMessageBox.warning(self, "Error", "Please enter both name and age.")
-
-    def search_user_data(self):
-        name = self.search_input.text()
-        if name:
-            users = self.db_manager.search_users_by_name(name)
-            if users:
-                QMessageBox.information(self, "Search Results", f"Found users:\n{users}")
-            else:
-                QMessageBox.warning(self, "Search Results", "No users found with that name.")
-        else:
-            QMessageBox.warning(self, "Error", "Please enter a name to search.")
-
-    def show_all_users(self):
-        users = self.db_manager.get_all_users()
-        if users:
-            QMessageBox.information(self, "All Users", f"All users:\n{users}")
-        else:
-            QMessageBox.warning(self, "All Users", "No users in the database.")
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = UserInputApp()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
