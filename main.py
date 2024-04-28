@@ -1,9 +1,6 @@
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox
 import sqlite3
-from kivy.app import App
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
 
 
 class DatabaseManager:
@@ -30,74 +27,91 @@ class DatabaseManager:
         return self.cursor.fetchall()
 
 
-class UserInputApp(App):
-    def build(self):
+class UserInputApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("User Input")
         self.db_manager = DatabaseManager("user_data.db")
+        self.init_ui()
 
-        layout = GridLayout(cols=2)
-        layout.add_widget(Label(text='Name:'))
-        self.name_input = TextInput(multiline=False)
-        layout.add_widget(self.name_input)
+    def init_ui(self):
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
 
-        layout.add_widget(Label(text='Age:'))
-        self.age_input = TextInput(multiline=False)
-        layout.add_widget(self.age_input)
+        layout = QVBoxLayout(central_widget)
 
-        self.submit_button = Button(text='Submit')
-        self.submit_button.bind(on_press=self.save_user_data)
-        layout.add_widget(self.submit_button)
+        # Name input
+        name_layout = QHBoxLayout()
+        name_layout.addWidget(QLabel("Name:"))
+        self.name_input = QLineEdit()
+        name_layout.addWidget(self.name_input)
+        layout.addLayout(name_layout)
 
-        layout.add_widget(Label(text='Search by Name:'))
-        self.search_input = TextInput(multiline=False)
-        layout.add_widget(self.search_input)
+        # Age input
+        age_layout = QHBoxLayout()
+        age_layout.addWidget(QLabel("Age:"))
+        self.age_input = QLineEdit()
+        age_layout.addWidget(self.age_input)
+        layout.addLayout(age_layout)
 
-        self.search_button = Button(text='Search')
-        self.search_button.bind(on_press=self.search_user_data)
-        layout.add_widget(self.search_button)
+        # Submit button
+        self.submit_button = QPushButton("Submit")
+        self.submit_button.clicked.connect(self.save_user_data)
+        layout.addWidget(self.submit_button)
 
-        self.show_all_button = Button(text='Show All')
-        self.show_all_button.bind(on_press=self.show_all_users)
-        layout.add_widget(self.show_all_button)
+        # Search input
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(QLabel("Search by Name:"))
+        self.search_input = QLineEdit()
+        search_layout.addWidget(self.search_input)
+        layout.addLayout(search_layout)
 
-        return layout
+        # Search button
+        self.search_button = QPushButton("Search")
+        self.search_button.clicked.connect(self.search_user_data)
+        layout.addWidget(self.search_button)
 
-    def save_user_data(self, instance):
-        name = self.name_input.text
-        age = self.age_input.text
+        # Show all button
+        self.show_all_button = QPushButton("Show All")
+        self.show_all_button.clicked.connect(self.show_all_users)
+        layout.addWidget(self.show_all_button)
+
+    def save_user_data(self):
+        name = self.name_input.text()
+        age = self.age_input.text()
         if name and age:
             try:
                 age = int(age)
                 self.db_manager.add_user(name, age)
-                print("User data saved successfully!")
-                self.name_input.text = ''
-                self.age_input.text = ''
+                QMessageBox.information(self, "Success", "User data saved successfully!")
+                self.name_input.clear()
+                self.age_input.clear()
             except ValueError:
-                print("Age must be a number.")
+                QMessageBox.warning(self, "Error", "Age must be a number.")
         else:
-            print("Please enter both name and age.")
+            QMessageBox.warning(self, "Error", "Please enter both name and age.")
 
-    def search_user_data(self, instance):
-        name = self.search_input.text
+    def search_user_data(self):
+        name = self.search_input.text()
         if name:
             users = self.db_manager.search_users_by_name(name)
             if users:
-                print("Found users:")
-                for user in users:
-                    print(user)
+                QMessageBox.information(self, "Search Results", f"Found users:\n{users}")
             else:
-                print("No users found with that name.")
+                QMessageBox.warning(self, "Search Results", "No users found with that name.")
         else:
-            print("Please enter a name to search.")
+            QMessageBox.warning(self, "Error", "Please enter a name to search.")
 
-    def show_all_users(self, instance):
+    def show_all_users(self):
         users = self.db_manager.get_all_users()
         if users:
-            print("All users:")
-            for user in users:
-                print(user)
+            QMessageBox.information(self, "All Users", f"All users:\n{users}")
         else:
-            print("No users in the database.")
+            QMessageBox.warning(self, "All Users", "No users in the database.")
 
 
 if __name__ == '__main__':
-    UserInputApp().run()
+    app = QApplication(sys.argv)
+    window = UserInputApp()
+    window.show()
+    sys.exit(app.exec())
