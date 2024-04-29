@@ -1,28 +1,59 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSizePolicy, QSpacerItem
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSizePolicy, QSpacerItem, QGraphicsOpacityEffect
+from PySide6.QtCore import Qt, QSize, QPropertyAnimation
+from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
+
+class GradientBorderFrame(QFrame):
+    def __init__(self, gradient_color1, gradient_color2, parent=None):
+        super().__init__(parent)
+        self.gradient_color1 = gradient_color1
+        self.gradient_color2 = gradient_color2
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        gradient = QLinearGradient(self.rect().topLeft(), self.rect().topRight())
+        gradient.setColorAt(0, self.gradient_color1)
+        gradient.setColorAt(1, self.gradient_color2)
+
+        pen = QPen(QBrush(gradient), 4)  # Ширина обводки здесь 4 пикселя, можно изменить
+        painter.setPen(pen)
+        painter.drawRoundedRect(self.rect(), 20, 20)  # 20 - радиус скругления углов, можно изменить
+
 
 class GroupWidget(QWidget):
-    # Код GroupWidget остается без изменений
-
     def __init__(self, icon_path, gradient_color1, gradient_color2, button_text, description_texts, parent=None):
         super().__init__(parent)
         self.setMinimumSize(200, 250)
 
         layout = QVBoxLayout(self)
-        outer_frame = QFrame(self)
-        outer_frame.setStyleSheet("""
-            QFrame {
-                border: 2px solid #555555;
-                border-radius: 20px;
-            }
-        """)
+
+        width_widget = QWidget()
+        width_widget.setFixedSize(250, 1)
+        layout.addWidget(width_widget)
+
+        #hex_color = gradient_color1
+
+        # Преобразование HEX в RGB
+        #rgb_color = tuple(int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
+
+        outer_frame = GradientBorderFrame(gradient_color1, gradient_color2, self)
+        outer_frame.setCursor(QCursor(Qt.PointingHandCursor))
+        outer_frame.setStyleSheet(
+            "QWidget:hover {"
+            f"   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba({gradient_color2.red()}, {gradient_color2.green()}, {gradient_color2.blue()}, 0.4), stop:1 rgba({gradient_color1.red()}, {gradient_color1.green()}, {gradient_color1.blue()}, 0.4));"  # Градиент с прозрачным начальным цветом и прозрачностью в конечном цвете
+                                                                                                                                               "   border-radius: 17px;"
+                                                                                                                                               "}"
+
+        )
+        outer_frame.setWindowOpacity(0.1)
+        outer_frame.setFixedWidth(280)
 
         layout.addWidget(outer_frame, alignment=Qt.AlignCenter)
 
         layout_outer_frame = QVBoxLayout(outer_frame)
-        spacer_item = QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Expanding) #НАД ИКОНКОЙ
+        spacer_item = QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout_outer_frame.addItem(spacer_item)
 
         icon_widget = QLabel()
@@ -32,43 +63,45 @@ class GroupWidget(QWidget):
         icon_widget.setPixmap(icon_pixmap)
         layout_outer_frame.addWidget(icon_widget, alignment=Qt.AlignCenter)
 
-        # Добавление отступа
-        spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding) #ПОД ИКОНКОЙ
+        spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout_outer_frame.addItem(spacer_item)
 
-        button = QPushButton(button_text)
-        button.setFixedSize(230, 50)
-        layout_outer_frame.addWidget(button, alignment=Qt.AlignCenter)
+        # Create a horizontal layout for the line and its margins
+        line_layout = QHBoxLayout()
+        line_layout.addSpacerItem(QSpacerItem(30, 1, QSizePolicy.Fixed, QSizePolicy.Fixed))  # Add left margin
+        gradient_line = QFrame()
+        gradient_line.setFixedWidth(2)
+        gradient_line.setFixedHeight(50)# Set fixed width to 250 pixels
+        gradient_line.setFrameShape(QFrame.HLine)
+        gradient_line.setStyleSheet(
+            "border: 0px; background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {}, stop:1 {}); border-radius: 1px;".format(
+                gradient_color1.name(), gradient_color2.name()))
+        line_layout.addWidget(gradient_line, alignment=Qt.AlignCenter)
+        line_layout.addSpacerItem(QSpacerItem(30, 1, QSizePolicy.Fixed, QSizePolicy.Fixed))  # Add right margin
+        layout_outer_frame.addLayout(line_layout)  # Add the line layout to the outer frame layout
 
-        spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding) #ПОД КНОПКОЙ
+        spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout_outer_frame.addItem(spacer_item)
+
+        new_label = QLabel("Новый лэйбл")
+        new_label.setAlignment(Qt.AlignCenter)
+        layout_outer_frame.addWidget(new_label, alignment=Qt.AlignCenter)
+
+        spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout_outer_frame.addItem(spacer_item)
 
         for text, color in description_texts:
-            description_label = QLabel(text)
-            description_label.setAlignment(Qt.AlignCenter)
-            description_label.setStyleSheet("color: {}; border: 0px;".format(color))
-            layout_outer_frame.addWidget(description_label, alignment=Qt.AlignCenter)
+            label = QLabel(text)
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("color: {}; border: 0px; background: transparent;".format(color))
+            layout_outer_frame.addWidget(label, alignment=Qt.AlignCenter)
 
         icon_widget.setStyleSheet("""
                     QLabel {
                         border: 0px;
+                        background: transparent;
                     }
                 """)
-
-        button.setStyleSheet("""
-                    QPushButton {
-                        background-color: #191919;
-                        color: white;
-                        border-radius: 5px;
-                        padding: 10px;
-                        border: 1px solid #7E7E7E;
-                    }
-                """)
-
-        # Добавление отступа
-        spacer_item = QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Expanding) #ПОД ТЕКСТОМ
-        layout_outer_frame.addItem(spacer_item)
-
 
 
 
