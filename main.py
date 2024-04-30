@@ -79,6 +79,10 @@ class GroupWidget(QWidget):
         outer_frame = GradientBorderFrame(gradient_color1, gradient_color2, self)
         outer_frame.setCursor(QCursor(Qt.PointingHandCursor))
         outer_frame.setStyleSheet(
+            "QWidget {"
+            f"  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba({gradient_color2.red()}, {gradient_color2.green()}, {gradient_color2.blue()}, 0.05), stop:1 rgba({gradient_color1.red()}, {gradient_color1.green()}, {gradient_color1.blue()}, 0.05));"
+            "   border-radius: 17px;"
+            "}"
             "QWidget:hover {"
             f"   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba({gradient_color2.red()}, {gradient_color2.green()}, {gradient_color2.blue()}, 0.4), stop:1 rgba({gradient_color1.red()}, {gradient_color1.green()}, {gradient_color1.blue()}, 0.4));"  # Градиент с прозрачным начальным цветом и прозрачностью в конечном цвете
             "   border-radius: 17px;"
@@ -123,7 +127,7 @@ class GroupWidget(QWidget):
 
         name = QLabel(label_text)
         name.setAlignment(Qt.AlignCenter)
-        name.setStyleSheet("font-size: 16pt;")
+        name.setStyleSheet("font-size: 16pt; background: transparent;")
         layout_outer_frame.addWidget(name, alignment=Qt.AlignCenter)
 
         spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -216,7 +220,7 @@ class MainWindow(QMainWindow):
                                     [
                                         ("✅ Доступ с любого компьютера", "#D3D3D3"),
                                         ("✅ Высокая безопасность БД", "#D3D3D3"),
-                                        ("⚠️ Доступ к сети", "#D3D3D3"),
+                                        ("⚠️ Требуется доступ к сети", "#D3D3D3"),
                                         ("❌ Требуется открытая MySQL БД", "#D3D3D3")
                                     ])
         horizontal_layout.addWidget(group2_widget)
@@ -227,7 +231,7 @@ class MainWindow(QMainWindow):
                                         ("✅ Простая настройка", "#D3D3D3"),
                                         ("✅ Доступ с любого компьютера", "#D3D3D3"),
                                         ("✅ Крайне высокая безопасность БД", "#D3D3D3"),
-                                        ("⚠️ Доступ к сети", "#D3D3D3")
+                                        ("⚠️ Требуется доступ к сети", "#D3D3D3")
                                     ])
         horizontal_layout.addWidget(group3_widget)
 
