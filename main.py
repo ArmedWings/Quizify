@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSizePolicy, QSpacerItem, QGraphicsOpacityEffect
-from PySide6.QtCore import Qt, QSize, QPropertyAnimation
+from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve, QRect, QMargins, QTimer
 from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
 
 class GradientBorderFrame(QFrame):
@@ -8,6 +8,8 @@ class GradientBorderFrame(QFrame):
         super().__init__(parent)
         self.gradient_color1 = gradient_color1
         self.gradient_color2 = gradient_color2
+        self.setMinimumSize(200, 250)
+        self.group_size = QSize(280, self.minimumHeight())
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -22,8 +24,42 @@ class GradientBorderFrame(QFrame):
         painter.drawRoundedRect(self.rect(), 20, 20)  # 20 - радиус скругления углов, можно изменить
 
 
+        # Остальной код без изменений
+
+    def calculate_group_size(self):
+        total_height = 0
+        max_width = 0
+
+        # Обходим дочерние виджеты
+        for i in range(self.layout().count()):
+            child = self.layout().itemAt(i).widget()
+            if child is not None:
+                total_height += child.height()
+                max_width = max(max_width, child.width())
+
+        # Добавляем к высоте промежуты между элементами
+        total_height += (self.layout().count() - 1) * 21  # Предполагаемый интервал в 30 пикселей
+
+        return QSize(max_width, total_height)
+
+    def enterEvent(self, event):
+        self.anim = QPropertyAnimation(self, b"size")
+        self.anim.setDuration(200)
+        self.anim.setStartValue(self.size())
+        self.anim.setEndValue(self.calculate_group_size() * 1.1)  # Увеличиваем размер на 10%
+        self.anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.anim.start()
+
+    def leaveEvent(self, event):
+        self.anim = QPropertyAnimation(self, b"size")
+        self.anim.setDuration(200)
+        self.anim.setStartValue(self.size())
+        self.anim.setEndValue(self.calculate_group_size())  # Возвращаемся к исходному размеру
+        self.anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.anim.start()
+
 class GroupWidget(QWidget):
-    def __init__(self, icon_path, gradient_color1, gradient_color2, button_text, description_texts, parent=None):
+    def __init__(self, icon_path, gradient_color1, gradient_color2, label_text, description_texts, parent=None):
         super().__init__(parent)
         self.setMinimumSize(200, 250)
 
@@ -83,7 +119,7 @@ class GroupWidget(QWidget):
         spacer_item = QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout_outer_frame.addItem(spacer_item)
 
-        new_label = QLabel("Новый лэйбл")
+        new_label = QLabel(label_text)
         new_label.setAlignment(Qt.AlignCenter)
         layout_outer_frame.addWidget(new_label, alignment=Qt.AlignCenter)
 
@@ -159,32 +195,33 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(central_widget)
 
         # Группа 1
-        group1_widget = GroupWidget("icons/pc.svg", QColor("#D660F2"), QColor("#5A42D6"), "Кнопка 1",
+        group1_widget = GroupWidget("icons/pc.svg", QColor("#D660F2"), QColor("#5A42D6"), "Оффлайн",
                                     [
-                                        ("- Использование без интернета", "#46F557"),
-                                        ("- Простая настройка", "#46F557"),
-                                        ("- Низкая безопасность базы данных", "#C9180A"),
-                                        ("- Доступ только на локальном компьютере", "#C9180A")
+                                        ("✅ Использование без интернета", "#D3D3D3"),
+                                        ("✅ Простая настройка", "#D3D3D3"),
+                                        ("⚠️ Локальный доступ", "#D3D3D3"),
+                                        ("❌ Низкая безопасность БД", "#D3D3D3"),
+                                        
                                     ])
         main_layout.addWidget(group1_widget)
 
         # Группа 2
-        group2_widget = GroupWidget("icons/network.svg", QColor("#6942D6"), QColor("#29B2D5"), "Кнопка 2",
+        group2_widget = GroupWidget("icons/network.svg", QColor("#6942D6"), QColor("#29B2D5"), "Децентрализованный",
                                     [
-                                        ("- Доступ с любого компьютера", "#46F557"),
-                                        ("- Высокая безопасность БД", "#BADB34"),
-                                        ("- Требуется интернет", "#BADB34"),
-                                        ("- Требуется открытая MySQL БД", "#C9180A")
+                                        ("✅ Доступ с любого компьютера", "#D3D3D3"),
+                                        ("✅ Высокая безопасность БД", "#D3D3D3"),
+                                        ("⚠️ Доступ к сети", "#D3D3D3"),
+                                        ("❌ Требуется открытая MySQL БД", "#D3D3D3")
                                     ])
         main_layout.addWidget(group2_widget)
 
         # Группа 3
-        group3_widget = GroupWidget("icons/internet.svg", QColor("#2667C9"), QColor("#46C1F8"), "Кнопка 3",
+        group3_widget = GroupWidget("icons/internet.svg", QColor("#2667C9"), QColor("#46C1F8"), "Централизованный",
                                     [
-                                        ("- Простая настройка", "#46F557"),
-                                        ("- Доступ с любого компьютера", "#46F557"),
-                                        ("- Крайне высокая безопасность БД", "#46F557"),
-                                        ("- Требуется доступ в интернет", "#BADB34")
+                                        ("✅ Простая настройка", "#D3D3D3"),
+                                        ("✅ Доступ с любого компьютера", "#D3D3D3"),
+                                        ("✅ Крайне высокая безопасность БД", "#D3D3D3"),
+                                        ("⚠️ Доступ к сети", "#D3D3D3")
                                     ])
         main_layout.addWidget(group3_widget)
 
