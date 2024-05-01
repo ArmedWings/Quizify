@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, \
-    QSizePolicy, QSpacerItem, QGraphicsOpacityEffect
+    QSizePolicy, QSpacerItem, QGraphicsOpacityEffect, QMessageBox
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve, QRect, QMargins, QTimer, QSequentialAnimationGroup, QCoreApplication, Signal, QPoint
 from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
 from cryptography.fernet import Fernet
@@ -182,15 +182,22 @@ class GroupWidget(QWidget):
         if self.outer_frame.rect().contains(cursor_pos.toPoint()):
             # Ваш код для обработки события нажатия на внешний фрейм
             print(f"Нажатие на внешний фрейм {index}")
-            self.clicked.emit(index)
+            if index < 3:
+                self.clicked.emit(index)
 
-    def clear_layout(self):
-        # Удаляем все элементы из основного макета
-        while self.main_layout.count():
-            item = self.main_layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
+                with open("config.txt", "r") as file:
+                    lines = file.readlines()
+
+                lines[0] = f"mode={index}\n"
+
+                with open("config.txt", "w") as file:
+                    file.writelines(lines)
+            else:
+                msg_box = QMessageBox()
+                msg_box.setWindowTitle("Внимание")
+                msg_box.setText("На данный момент недоступно")
+                msg_box.exec()
+
 
 
 class MainWindow(QMainWindow):
@@ -291,6 +298,7 @@ class MainWindow(QMainWindow):
 
         self.custom_widget = CustomWidget(self)
         self.main_layout.addWidget(self.custom_widget)
+
     def resizeEvent(self, event):
         # Пересчитываем положение метки при изменении размера окна
         self.adjust_label_position()
