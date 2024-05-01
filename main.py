@@ -66,6 +66,7 @@ class GradientBorderFrame(QFrame):
 
 class GroupWidget(QWidget):
     clicked = Signal(int)
+
     def __init__(self, index, icon_path, gradient_color1, gradient_color2, label_text, description_texts, parent=None):
         super().__init__(parent)
         self.setMinimumSize(200, 250)
@@ -184,15 +185,21 @@ class GroupWidget(QWidget):
             # Ваш код для обработки события нажатия на внешний фрейм
             print(f"Нажатие на внешний фрейм {index}")
             if index < 3:
-                self.clicked.emit(index)
+                try:
+                    with open("config.txt", "r") as file:
+                        lines = file.readlines()
+                except FileNotFoundError:
+                    # Если файл не найден, создаем его и записываем в него значение mode=index
+                    with open("config.txt", "w") as file:
+                        file.write(f"mode={index}\n")
+                    self.clicked.emit(index)
+                else:
+                    lines[0] = f"mode={index}\n"
 
-                with open("config.txt", "r") as file:
-                    lines = file.readlines()
+                    with open("config.txt", "w") as file:
+                        file.writelines(lines)
 
-                lines[0] = f"mode={index}\n"
-
-                with open("config.txt", "w") as file:
-                    file.writelines(lines)
+                    self.clicked.emit(index)
             else:
                 msg_box = QMessageBox()
                 msg_box.setWindowTitle("Внимание")
@@ -213,23 +220,32 @@ class MainWindow(QMainWindow):
 
         # Устанавливаем стили
         self.setStyleSheet("""
-            QMainWindow {
-                background-color: #1C1B1B; /* черно-серый цвет фона */
-            }
-            QPushButton {
-                background-color: #191919; /* серый цвет кнопок */
-                color: white; /* белый цвет текста на кнопках */
-                border-radius: 5px; /* скругление углов кнопок */
-                padding: 10px; /* отступ вокруг текста кнопок */
-                border: 1px solid #7E7E7E;
-            }
-            QPushButton:hover {
-                background-color: #111111; /* изменение цвета при наведении на кнопку */
-            }
-            QLabel {
-                color: white; /* устанавливаем белый цвет текста на иконках */
-            }
-        """)
+                    QMainWindow {
+                        background-color: #1C1B1B; /* черно-серый цвет фона */
+                    }
+                    QLineEdit {
+                        background-color: #2C2C2C; /* темно-серый цвет поля ввода */
+                        border: 1px solid #7E7E7E; /* цвет рамки */
+                        color: white; /* белый цвет текста */
+                        selection-background-color: #0078D7; /* цвет выделенного текста */
+                    }
+                    QLineEdit:focus {
+                        border: 2px solid #0078D7; /* цвет рамки при фокусе */
+                    }
+                    QPushButton {
+                        background-color: #191919; /* серый цвет кнопок */
+                        color: white; /* белый цвет текста на кнопках */
+                        border-radius: 15px; /* скругление углов кнопок */
+                        padding: 10px; /* отступ вокруг текста кнопок */
+                        border: 1px solid #7E7E7E;
+                    }
+                    QPushButton:hover {
+                        background-color: #111111; /* изменение цвета при наведении на кнопку */
+                    }
+                    QLabel {
+                        color: white; /* устанавливаем белый цвет текста на иконках */
+                    }
+                """)
 
         # Изменяем на горизонтальный компоновщик
         self.main_layout = QHBoxLayout(central_widget)
@@ -238,6 +254,7 @@ class MainWindow(QMainWindow):
         self.setup_interface()
 
     def setup_interface(self):
+        self.ismainfocus = True
 
         # Создаем горизонтальный компоновщик для групп кнопок
         horizontal_layout = QHBoxLayout()
@@ -297,16 +314,23 @@ class MainWindow(QMainWindow):
         for widget in widgets_to_remove:
             widget.deleteLater()
         self.common_label.deleteLater()
+
+        self.ismainfocus = False
+        #ПЕРЕХОД НА ДРУГУЮ СТРАНИЦУ
         if group == 1:
-            self.auth_widget = Auth(self)
+
+            self.auth_widget = Auth(main_window=self, gradient_color1="#D660F2", gradient_color2="#5A42D6")
             self.main_layout.addWidget(self.auth_widget)
         elif group == 2:
-            self.custom_widget = CustomWidget(self)
-            self.main_layout.addWidget(self.custom_widget)
+            self.auth_widget = Auth(main_window=self, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            self.main_layout.addWidget(self.auth_widget)
+            #self.custom_widget = CustomWidget(self)
+            #self.main_layout.addWidget(self.custom_widget)
 
     def resizeEvent(self, event):
         # Пересчитываем положение метки при изменении размера окна
-        self.adjust_label_position()
+        if self.ismainfocus==True:
+            self.adjust_label_position()
 
     def adjust_label_position(self):
         # Перемещаем метку по центру по вертикали
