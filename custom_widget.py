@@ -4,6 +4,7 @@ class CustomWidget(QWidget):
     def __init__(self, main_window=None):
         super().__init__()
         self.main_window = main_window  # Сохраняем ссылку на MainWindow
+        self.on_other_page = True
 
         # Создаем вертикальный компоновщик для кнопок слева
         left_layout = QVBoxLayout()

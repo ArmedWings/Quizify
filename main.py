@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve, QRect, Q
 from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
 from cryptography.fernet import Fernet
 
+from Auth import Auth
 from custom_widget import CustomWidget
 
 
@@ -237,6 +238,7 @@ class MainWindow(QMainWindow):
         self.setup_interface()
 
     def setup_interface(self):
+
         # Создаем горизонтальный компоновщик для групп кнопок
         horizontal_layout = QHBoxLayout()
 
@@ -273,9 +275,9 @@ class MainWindow(QMainWindow):
 
         horizontal_layout.addWidget(self.group3_widget)
 
-        self.group1_widget.clicked.connect(self.clear_layout)
-        self.group2_widget.clicked.connect(self.clear_layout)
-        self.group3_widget.clicked.connect(self.clear_layout)
+        self.group1_widget.clicked.connect(lambda: self.clear_layout(1))
+        self.group2_widget.clicked.connect(lambda: self.clear_layout(2))
+        self.group3_widget.clicked.connect(lambda: self.clear_layout(3))
 
         self.main_layout.addLayout(horizontal_layout)
 
@@ -287,7 +289,7 @@ class MainWindow(QMainWindow):
         self.adjust_label_position()
 
         self.common_label.show()
-    def clear_layout(self):
+    def clear_layout(self, group):
         # Создаем список виджетов для удаления
         widgets_to_remove = [self.group3_widget, self.group2_widget, self.group1_widget]
 
@@ -295,9 +297,12 @@ class MainWindow(QMainWindow):
         for widget in widgets_to_remove:
             widget.deleteLater()
         self.common_label.deleteLater()
-
-        self.custom_widget = CustomWidget(self)
-        self.main_layout.addWidget(self.custom_widget)
+        if group == 1:
+            self.auth_widget = Auth(self)
+            self.main_layout.addWidget(self.auth_widget)
+        elif group == 2:
+            self.custom_widget = CustomWidget(self)
+            self.main_layout.addWidget(self.custom_widget)
 
     def resizeEvent(self, event):
         # Пересчитываем положение метки при изменении размера окна
@@ -349,6 +354,5 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-
     window.show()
     sys.exit(app.exec())
