@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QLinearGradient, QBrush, QPen
 from PySide6.QtCore import QSize, Qt
 import os
 import sqlite3
+import hashlib
 
 class Auth(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None):
@@ -109,6 +110,253 @@ class Auth(QWidget):
                 spacer = item.spacerItem()
                 if spacer:
                     frame_layout.removeItem(spacer)
+
+    def fill_frame_login(self):
+        # Очистить содержимое фрейма
+        self.clear_frame()
+
+        # Изменить главный лэйбл
+        self.common_label.setText("Вход")
+        self.adjust_label_position()
+
+        # Получаем текущий макет фрейма
+        frame_layout = self.frame.layout()
+
+        # Создаем лэйблы и текстовые поля вручную
+        label_login = QLabel("Логин:", self.frame)
+        self.line_edit_login = QLineEdit(self.frame)
+        label_password = QLabel("Пароль:", self.frame)
+        self.line_edit_password = QLineEdit(self.frame)
+        self.line_edit_password.setEchoMode(QLineEdit.Password)
+
+        # Увеличиваем высоту полей ввода
+        self.line_edit_login.setFixedHeight(40)
+        self.line_edit_password.setFixedHeight(40)
+
+        # Увеличиваем размер порядковых лэйблов
+        label_login.setStyleSheet("font-size: 16px;")
+        label_password.setStyleSheet("font-size: 16px;")
+
+        # Добавляем элементы в существующий макет
+        frame_layout.addWidget(label_login)
+        frame_layout.addWidget(self.line_edit_login)
+        frame_layout.addWidget(label_password)
+        frame_layout.addWidget(self.line_edit_password)
+
+        spacer_label = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
+        frame_layout.addItem(spacer_label)
+
+        # Создаем кнопку "Подтвердить"
+        button_confirm = QPushButton("Подтвердить", self.frame)
+        button_confirm.setStyleSheet("font-size: 18px;")
+        frame_layout.addWidget(button_confirm)
+
+        # Помещаем кнопку по центру
+        frame_layout.setAlignment(Qt.AlignCenter)
+        button_confirm.clicked.connect(self.handle_login_confirm_click)
+
+    def handle_login_confirm_click(self):
+        # Получаем текст из полей ввода
+        login = self.line_edit_login.text()
+
+
+        # Получаем путь из файла config.txt
+        config_path = ""
+        with open("config.txt", "r") as f:
+            for line in f:
+                if line.startswith("catalog="):
+                    config_path = line.strip().split("=")[1]
+                    break
+
+        if not config_path:
+            QMessageBox.critical(self, "Ошибка", "Не удалось найти путь к базе данных")
+            return
+
+        # Подключаемся к базе данных
+        db_path = os.path.join(config_path, "users.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Поиск пользователя в базе данных
+        cursor.execute('''SELECT * FROM users WHERE LOWER(login)=LOWER(?)''', (login.lower(),))
+        user_data = cursor.fetchone()
+
+        if user_data is None:
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Ошибка")
+            msg_box.setText("Пользователь с таким логином не найден")
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.exec_()
+            return
+
+        salt = "saltingmypc"
+        password = self.line_edit_password.text()
+        password_bytes = password.encode()
+        salt_bytes = salt.encode()
+        salted_password = password_bytes + salt_bytes
+        hashed_password = hashlib.md5(salted_password)
+        password = hashed_password.hexdigest()
+        print(password, user_data[3])
+
+
+        if user_data[3] != password:
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Ошибка")
+            msg_box.setText("Неверный пароль")
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.exec_()
+        else:
+            print("Вход выполнен успешно")
+            # Дополнительные действия при успешном входе, например, переход на другую страницу или отображение основного окна приложения
+
+        # Закрываем соединение с базой данных
+        conn.close()
+    def fill_frame_reg(self):
+        # Очистить содержимое фрейма
+        self.clear_frame()
+
+        # Изменить главный лэйбл
+        self.common_label.setText("Регистрация")
+        self.adjust_label_position()
+
+        # Получаем текущий макет фрейма
+        frame_layout = self.frame.layout()
+
+        # Создаем лэйблы и текстовые поля вручную
+        label1 = QLabel("Как к вам обращаться?", self.frame)
+        self.line_edit1 = QLineEdit(self.frame)
+        label2 = QLabel("Придумайте логин:", self.frame)
+        self.line_edit2 = QLineEdit(self.frame)
+        label3 = QLabel("Придумайте пароль:", self.frame)
+        self.line_edit3 = QLineEdit(self.frame)
+        label4 = QLabel("Повтор пароля:", self.frame)
+        self.line_edit4 = QLineEdit(self.frame)
+
+        # Увеличиваем высоту полей ввода
+        self.line_edit1.setFixedHeight(40)
+        self.line_edit2.setFixedHeight(40)
+        self.line_edit3.setFixedHeight(40)
+        self.line_edit4.setFixedHeight(40)
+        self.line_edit3.setEchoMode(QLineEdit.Password)
+        self.line_edit4.setEchoMode(QLineEdit.Password)
+
+        # Увеличиваем размер порядковых лэйблов
+        label1.setStyleSheet("font-size: 16px;")
+        label2.setStyleSheet("font-size: 16px;")
+        label3.setStyleSheet("font-size: 16px;")
+        label4.setStyleSheet("font-size: 16px;")
+
+        # Добавляем элементы в существующий макет
+        frame_layout.addWidget(label1)
+        frame_layout.addWidget(self.line_edit1)
+        frame_layout.addWidget(label2)
+        frame_layout.addWidget(self.line_edit2)
+        frame_layout.addWidget(label3)
+        frame_layout.addWidget(self.line_edit3)
+        frame_layout.addWidget(label4)
+        frame_layout.addWidget(self.line_edit4)
+
+        spacer_label = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
+        frame_layout.addItem(spacer_label)
+
+        # Создаем кнопку "Подтвердить"
+        button_confirm = QPushButton("Подтвердить", self.frame)
+        button_confirm.setStyleSheet("font-size: 18px;")
+        frame_layout.addWidget(button_confirm)
+
+        # Помещаем кнопку по центру
+        frame_layout.setAlignment(Qt.AlignCenter)
+        button_confirm.clicked.connect(self.handle_reg_confirm_click)
+
+    def handle_reg_confirm_click(self):
+        # Проверка заполнения всех полей и соответствия паролей
+        line_edits = [self.line_edit1, self.line_edit2, self.line_edit3, self.line_edit4]
+        labels = ["Имя", "Логин", "Пароль", "Повтор пароля"]
+        for line_edit, label in zip(line_edits, labels):
+            text = line_edit.text()
+            if not text:
+                msg_box = QMessageBox()
+                msg_box.setWindowTitle("Предупреждение")
+                msg_box.setText(f"Необходимо заполнить поле: {label}!")
+                msg_box.setIcon(QMessageBox.Warning)
+                msg_box.exec_()
+                return
+
+        if self.line_edit3.text() != self.line_edit4.text():
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Предупреждение")
+            msg_box.setText("Пароли не совпадают!")
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.exec_()
+            return
+
+        # Проверка на наличие недопустимых символов
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        for line_edit in line_edits:
+            text = line_edit.text()
+            if not all(char in valid_chars for char in text):
+                msg_box = QMessageBox()
+                msg_box.setWindowTitle("Предупреждение")
+                msg_box.setText("Можно вводить только латиницу, цифры и допустимые символы!")
+                msg_box.setIcon(QMessageBox.Warning)
+                msg_box.exec_()
+                return
+
+        # Проверка существования пользователя в базе данных
+        login = self.line_edit2.text()
+        config_file_path = "config.txt"
+        with open(config_file_path, "r") as file:
+            lines = file.readlines()
+            if len(lines) >= 2:
+                folder_path = lines[1].strip().split("=")[1]
+            else:
+                # Вывести сообщение об ошибке, если в файле нет необходимой информации
+                print("Ошибка: В файле config.txt отсутствует необходимая информация о пути к базе данных.")
+                return  # Вернуться, чтобы избежать дальнейшей обработки
+
+        # Создание пути к базе данных из пути, прочитанного из файла config.txt
+        db_path = os.path.join(folder_path, "users.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute('''SELECT * FROM users WHERE LOWER(login)=LOWER(?)''', (login,))
+        if cursor.fetchone() is not None:
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Предупреждение")
+            msg_box.setText("Пользователь с таким логином уже существует!")
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.exec_()
+            return
+
+        # Если все проверки пройдены успешно, выводим сообщение об успешной регистрации
+        print("Все данные заполнены корректно.")
+        full_name = self.line_edit1.text()
+        login = self.line_edit2.text()
+        password = self.line_edit3.text()
+        salt = "saltingmypc"
+        password_bytes = password.encode()
+        salt_bytes = salt.encode()
+        salted_password = password_bytes + salt_bytes
+        hashed_password = hashlib.md5(salted_password)
+        password = hashed_password.hexdigest()
+
+        # Вставка данных в базу данных SQLite
+        cursor.execute('''INSERT INTO users (full_name, login, password) VALUES (?, ?, ?)''',
+                       (full_name, login, password))
+
+        # Сохранение изменений и закрытие соединения
+        conn.commit()
+        conn.close()
+
+        # Выводим сообщение об успешной регистрации
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Успех")
+        msg_box.setText("Вы успешно зарегистрированы!")
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.exec_()
+
+        # Очищаем фрейм и отображаем экран приветствия
+        self.clear_frame()
+        self.fill_frame_welcome()
 
     def fill_frame_moder(self):
         # Очистить содержимое фрейма
@@ -238,9 +486,16 @@ class Auth(QWidget):
         with open("config.txt", "w") as file:
             file.writelines(lines)
 
-        data1 = self.line_edit1.text()
-        data2 = self.line_edit2.text()
-        data3 = self.line_edit3.text()
+        full_name = "MODER"
+        login = self.line_edit1.text()
+
+        salt = "saltingmypc"
+        password = self.line_edit2.text()
+        password_bytes = password.encode()
+        salt_bytes = salt.encode()
+        salted_password = password_bytes + salt_bytes
+        hashed_password = hashlib.md5(salted_password)
+        password = hashed_password.hexdigest()
 
         # Создание базы данных SQLite
         db_path = os.path.join(self.folder_path, "users.db")
@@ -250,22 +505,26 @@ class Auth(QWidget):
         # Создание таблицы и вставка данных
         cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                                     id INTEGER PRIMARY KEY,
-                                    data1 TEXT,
-                                    data2 TEXT,
-                                    data3 TEXT
+                                    full_name TEXT,
+                                    login TEXT,
+                                    password TEXT
                                 )''')
 
-        data_tuple = (data1, data2, data3)
-        cursor.execute('''INSERT INTO users (data1, data2, data3) VALUES (?, ?, ?)''', data_tuple)
+        data_tuple = (full_name, login, password)
+        cursor.execute('''INSERT INTO users (full_name, login, password) VALUES (?, ?, ?)''', data_tuple)
 
         # Сохранение изменений и закрытие соединения
         conn.commit()
         conn.close()
-        self.clear_frame()
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Успех")
+        msg_box.setText("Аккаунт модератора зарегистрирован!")
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.exec_()
         self.fill_frame_welcome()
 
     def fill_frame_welcome(self):
-        #self.clear_frame()
+        self.clear_frame()
 
         self.common_label = QLabel("Добро пожаловать!", self)
         self.common_label.setStyleSheet("font-size: 24px; color: white;")
@@ -290,22 +549,16 @@ class Auth(QWidget):
         # Ширина кнопки = максимальная доступная по фрейму
         button_login.setFixedWidth(400)
         button_register.setFixedWidth(400)
+        button_login.clicked.connect(self.handle_welcome_login_click)
+        button_register.clicked.connect(self.handle_welcome_register_click)
 
-    def handle_button_click(self):
-        # Пример обработчика события нажатия кнопки
-        print("Кнопка была нажата")
+    def handle_welcome_login_click(self):
+        self.fill_frame_login()
+        pass
 
-    def fill_frame_reg(self):
-        # Заполнение фрейма для регистрации
-        pass  # здесь добавляем лейблы и кнопки
-
-    def fill_frame_log(self):
-        # Заполнение фрейма для входа
-        pass  # здесь добавляем лейблы и кнопки
-
-    def fill_frame_moderator(self):
-        # Заполнение фрейма для аккаунта модератора
-        pass  # здесь добавляем лейблы и кнопки
+    def handle_welcome_register_click(self):
+        self.fill_frame_reg()
+        pass
 
     def on_resize(self, event):
         self.adjust_label_position()
