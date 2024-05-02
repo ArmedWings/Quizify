@@ -228,6 +228,7 @@ class MainWindow(QMainWindow):
                         border: 1px solid #7E7E7E; /* цвет рамки */
                         color: white; /* белый цвет текста */
                         selection-background-color: #0078D7; /* цвет выделенного текста */
+                        font-size: 20px;
                     }
                     QLineEdit:focus {
                         border: 2px solid #0078D7; /* цвет рамки при фокусе */
