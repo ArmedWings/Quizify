@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QPushButton, QApplication, QHBoxLayout, QSizePolicy, QSpacerItem, QLineEdit, QFileDialog, QMessageBox
-from PySide6.QtGui import QPainter, QLinearGradient, QBrush, QPen
+from PySide6.QtGui import QPainter, QLinearGradient, QBrush, QPen, QImage, QPixmap
 from PySide6.QtCore import QSize, Qt
 import os
 import sqlite3
 import hashlib
+from functools import partial
 
 class Auth(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None):
@@ -19,6 +20,27 @@ class Auth(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)  # Устанавливаем отступы макета
         layout.setAlignment(Qt.AlignCenter)  # Выравниваем содержимое по центру
 
+        self.back_icon = QLabel(self)
+        back_icon_path = "icons/back.svg"  # Путь к файлу SVG
+        back_icon_pixmap = self.load_and_render_svg(back_icon_path, self.gradient_color1, self.gradient_color2)
+        back_icon_pixmap = back_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
+        self.back_icon.setPixmap(back_icon_pixmap)
+        #self.back_icon.mousePressEvent = self.back_icon_clicked
+
+
+        # Создаем иконку "Настройки" и заполняем ее
+        self.settings_icon = QLabel(self)
+        settings_icon_path = "icons/settings.svg"  # Путь к файлу SVG
+        settings_icon_pixmap = self.load_and_render_svg(settings_icon_path, self.gradient_color1, self.gradient_color2)
+        settings_icon_pixmap = settings_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
+        self.settings_icon.setPixmap(settings_icon_pixmap)
+        #self.settings_icon.mousePressEvent = self.settings_icon_clicked
+
+        image_size = back_icon_pixmap.size()
+        self.back_icon.setFixedSize(image_size)
+        self.settings_icon.setFixedSize(image_size)
+
+
         # Создаем фрейм
         self.frame = GradientBorderFrame(self.gradient_color1, self.gradient_color2, self)
         self.frame.setMinimumSize(500, 100)
@@ -31,11 +53,16 @@ class Auth(QWidget):
         frame_layout.setContentsMargins(40, 40, 40, 40)
         frame_layout.setAlignment(Qt.AlignCenter)  # Выравниваем содержимое по центру
 
+        self.common_label = QLabel("Добро пожаловать!", self)
+        self.common_label.setStyleSheet("font-size: 24px; color: white;")
+        self.adjust_label_position()
+
         # Заполняем фрейм в зависимости от условий
         self.fill_frame()
 
         # Устанавливаем обработчик изменения размера окна
         self.resizeEvent = self.on_resize
+
 
     def fill_frame(self):
         # Читаем конфигурационный файл
@@ -50,13 +77,11 @@ class Auth(QWidget):
                         return
         self.fill_frame_firstoffline()
 
-    def fill_frame_firstoffline(self):
+    def fill_frame_firstoffline(self, *args):
         # Здесь вы можете добавить необходимые элементы во фрейм
         # Например, кнопки или другие виджеты
-        self.common_label = QLabel("Добро пожаловать!", self)
-        self.common_label.setStyleSheet("font-size: 24px; color: white;")
+        self.common_label.setText("Добро пожаловать!")
         self.adjust_label_position()
-
         # Создаем вертикальный макет для размещения элементов внутри фрейма
         frame_layout = self.frame.layout()
 
@@ -154,6 +179,7 @@ class Auth(QWidget):
         # Помещаем кнопку по центру
         frame_layout.setAlignment(Qt.AlignCenter)
         button_confirm.clicked.connect(self.handle_login_confirm_click)
+        self.back_icon.mousePressEvent = self.fill_frame_welcome
 
     def handle_login_confirm_click(self):
         # Получаем текст из полей ввода
@@ -267,6 +293,7 @@ class Auth(QWidget):
         # Помещаем кнопку по центру
         frame_layout.setAlignment(Qt.AlignCenter)
         button_confirm.clicked.connect(self.handle_reg_confirm_click)
+        self.back_icon.mousePressEvent = self.fill_frame_welcome
 
     def handle_reg_confirm_click(self):
         # Проверка заполнения всех полей и соответствия паролей
@@ -420,6 +447,7 @@ class Auth(QWidget):
         frame_layout.setAlignment(Qt.AlignCenter)
         self.button_choose_folder.clicked.connect(self.handle_choose_folder_click)
         button_confirm.clicked.connect(self.handle_confirm_click)
+        self.back_icon.mousePressEvent = self.fill_frame_firstoffline
 
     def handle_choose_folder_click(self):
         self.folder_path = QFileDialog.getExistingDirectory(self, "Выберите папку для сохранения", "/")
@@ -523,11 +551,10 @@ class Auth(QWidget):
         msg_box.exec_()
         self.fill_frame_welcome()
 
-    def fill_frame_welcome(self):
+    def fill_frame_welcome(self, *args):
         self.clear_frame()
 
-        self.common_label = QLabel("Добро пожаловать!", self)
-        self.common_label.setStyleSheet("font-size: 24px; color: white;")
+        self.common_label.setText("Добро пожаловать!")
         self.adjust_label_position()
 
         # Создаем вертикальный макет для размещения элементов внутри фрейма
@@ -551,11 +578,20 @@ class Auth(QWidget):
         button_register.setFixedWidth(400)
         button_login.clicked.connect(self.handle_welcome_login_click)
         button_register.clicked.connect(self.handle_welcome_register_click)
+        self.back_icon.mousePressEvent = self.confirm_exit
 
     def handle_welcome_login_click(self):
         self.fill_frame_login()
         pass
 
+    def confirm_exit(self, event):
+        reply = QMessageBox.question(None, 'Выход',
+                                     'Вы уверены, что хотите выйти?',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            QApplication.quit()
     def handle_welcome_register_click(self):
         self.fill_frame_reg()
         pass
@@ -567,7 +603,34 @@ class Auth(QWidget):
         self.common_label.adjustSize()
         x = (self.width() - self.common_label.width()) // 2
         y = (self.height() - self.common_label.height()) // 20
+        x_left = self.width()//30
+        x_right = (self.width() - self.width()//30 - self.settings_icon.width())
         self.common_label.move(x, y)
+        self.back_icon.move(x_left, y)
+        self.settings_icon.move(x_right, y)
+
+    def load_and_render_svg(self, filename, gradient_color1, gradient_color2):
+        image = QImage(filename)
+        if image.isNull():
+            print("Ошибка загрузки файла")
+            return QPixmap()
+
+        pixmap = QPixmap(image.size())
+        pixmap.fill(Qt.transparent)
+
+        painter = QPainter(pixmap)
+        painter.drawImage(0, 0, image)
+
+        gradient = QLinearGradient(0, 0, pixmap.width(), pixmap.height())
+        gradient.setColorAt(0, gradient_color1)
+        gradient.setColorAt(1, gradient_color2)
+        brush = QBrush(gradient)
+        painter.setBrush(brush)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.drawRect(pixmap.rect())
+        painter.end()
+
+        return pixmap
 
 
 class GradientBorderFrame(QFrame):
