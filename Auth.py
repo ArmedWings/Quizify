@@ -80,8 +80,11 @@ class Auth(QWidget):
     def fill_frame_firstoffline(self, *args):
         # Здесь вы можете добавить необходимые элементы во фрейм
         # Например, кнопки или другие виджеты
+        self.clear_frame()
+
         self.common_label.setText("Добро пожаловать!")
         self.adjust_label_position()
+
         # Создаем вертикальный макет для размещения элементов внутри фрейма
         frame_layout = self.frame.layout()
 
@@ -109,12 +112,15 @@ class Auth(QWidget):
         button_import.setStyleSheet("font-size: 18px;")
         frame_layout.addWidget(button_import)
 
+        button_register.setFixedWidth(400)
+        button_import.setFixedWidth(400)
         # Ширина кнопки = максимальная доступная по фрейму
-        button_register.setFixedWidth(self.frame.width() - 30)
-        button_import.setFixedWidth(self.frame.width() - 30)
+        #button_register.setFixedWidth(self.frame.width() - 30)
+        #button_import.setFixedWidth(self.frame.width() - 30)
 
         # Подключаем обработчик события нажатия на кнопку
         button_register.clicked.connect(self.handle_register_click)
+        self.back_icon.mousePressEvent = self.clear_layout
 
     def handle_register_click(self):
         # Здесь можно выполнить дополнительные действия

@@ -250,9 +250,33 @@ class MainWindow(QMainWindow):
 
         # Изменяем на горизонтальный компоновщик
         self.main_layout = QHBoxLayout(central_widget)
-
+        mode = self.get_config_mode()
+        if mode == 1:
+            self.ismainfocus = False
+            self.auth_widget = Auth(main_window=self, gradient_color1="#D660F2", gradient_color2="#5A42D6")
+            self.main_layout.addWidget(self.auth_widget)
+        else:
+            self.setup_interface()
         # Вызываем функцию для настройки интерфейса
-        self.setup_interface()
+
+
+    def get_config_mode(self):
+        config_filename = "config.txt"
+        try:
+            with open(config_filename, 'r') as config_file:
+                first_line = config_file.readline().strip()
+                if first_line.startswith("mode="):
+                    mode_value = first_line.split("=")[1]
+                    try:
+                        mode_number = int(mode_value)
+                        print("Правда: mode =", mode_number)
+                        return mode_number
+                    except ValueError:
+                        pass
+        except FileNotFoundError:
+            pass
+        print("Неправда")
+        return None
 
     def setup_interface(self):
         self.ismainfocus = True
@@ -373,6 +397,8 @@ class MainWindow(QMainWindow):
         cipher_suite = Fernet(self.key)
         decrypted_data = cipher_suite.decrypt(encrypted_data).decode()
         return decrypted_data
+
+
 
 
 
