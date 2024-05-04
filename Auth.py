@@ -34,7 +34,7 @@ class Auth(QWidget):
         settings_icon_pixmap = self.load_and_render_svg(settings_icon_path, self.gradient_color1, self.gradient_color2)
         settings_icon_pixmap = settings_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
         self.settings_icon.setPixmap(settings_icon_pixmap)
-        #self.settings_icon.mousePressEvent = self.settings_icon_clicked
+        self.settings_icon.mousePressEvent = self.clear_layout
 
         image_size = back_icon_pixmap.size()
         self.back_icon.setFixedSize(image_size)
@@ -631,6 +631,16 @@ class Auth(QWidget):
         painter.end()
 
         return pixmap
+    def clear_layout(self, *args):
+        # Удаляем все дочерние элементы из макета главного окна
+        while self.main_window.main_layout.count():
+            item = self.main_window.main_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        # Вызываем метод setup_interface из MainWindow
+        self.main_window.setup_interface()
 
 
 class GradientBorderFrame(QFrame):
