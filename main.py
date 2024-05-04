@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, Q
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve, QRect, QMargins, QTimer, QSequentialAnimationGroup, QCoreApplication, Signal, QPoint
 from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
 from cryptography.fernet import Fernet
-
+from ModerPage import ModerPage
 from Auth import Auth
 from custom_widget import CustomWidget
 
@@ -347,8 +347,11 @@ class MainWindow(QMainWindow):
             self.auth_widget = Auth(main_window=self, gradient_color1="#D660F2", gradient_color2="#5A42D6")
             self.main_layout.addWidget(self.auth_widget)
         elif group == 2:
-            self.auth_widget = Auth(main_window=self, gradient_color1="#6942D6", gradient_color2="#29B2D5")
-            self.main_layout.addWidget(self.auth_widget)
+
+            self.moder_widget = ModerPage(main_window=self, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            self.main_layout.addWidget(self.moder_widget)
+            #self.auth_widget = Auth(main_window=self, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            #self.main_layout.addWidget(self.auth_widget)
             #self.custom_widget = CustomWidget(self)
             #self.main_layout.addWidget(self.custom_widget)
 

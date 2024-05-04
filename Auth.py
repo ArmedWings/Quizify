@@ -4,6 +4,7 @@ from PySide6.QtCore import QSize, Qt
 import os
 import sqlite3
 import hashlib
+from ModerPage import ModerPage
 from functools import partial
 
 class Auth(QWidget):
@@ -34,7 +35,7 @@ class Auth(QWidget):
         settings_icon_pixmap = self.load_and_render_svg(settings_icon_path, self.gradient_color1, self.gradient_color2)
         settings_icon_pixmap = settings_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
         self.settings_icon.setPixmap(settings_icon_pixmap)
-        self.settings_icon.mousePressEvent = self.clear_layout
+        self.settings_icon.mousePressEvent = self.clear_layout_out
 
         image_size = back_icon_pixmap.size()
         self.back_icon.setFixedSize(image_size)
@@ -120,7 +121,7 @@ class Auth(QWidget):
 
         # Подключаем обработчик события нажатия на кнопку
         button_register.clicked.connect(self.handle_register_click)
-        self.back_icon.mousePressEvent = self.clear_layout
+        self.back_icon.mousePressEvent = self.clear_layout_out
 
     def handle_register_click(self):
         # Здесь можно выполнить дополнительные действия
@@ -239,6 +240,9 @@ class Auth(QWidget):
             msg_box.exec_()
         else:
             print("Вход выполнен успешно")
+            self.clear_layout_moder()
+
+
             # Дополнительные действия при успешном входе, например, переход на другую страницу или отображение основного окна приложения
 
         # Закрываем соединение с базой данных
@@ -637,7 +641,7 @@ class Auth(QWidget):
         painter.end()
 
         return pixmap
-    def clear_layout(self, *args):
+    def clear_layout_out(self, *args):
         # Удаляем все дочерние элементы из макета главного окна
         while self.main_window.main_layout.count():
             item = self.main_window.main_layout.takeAt(0)
@@ -646,7 +650,20 @@ class Auth(QWidget):
                 widget.deleteLater()
 
         # Вызываем метод setup_interface из MainWindow
+        self.ismainfocus = True
         self.main_window.setup_interface()
+    def clear_layout_moder(self, *args):
+        # Удаляем все дочерние элементы из макета главного окна
+        while self.main_window.main_layout.count():
+            item = self.main_window.main_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+        self.main_window.main_layout.removeWidget(self)
+        self.main_window.main_layout.addWidget(moder_page)
+        # Вызываем метод setup_interface из MainWindow
+
 
 
 class GradientBorderFrame(QFrame):
