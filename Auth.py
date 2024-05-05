@@ -368,6 +368,7 @@ class Auth(QWidget):
         print("Все данные заполнены корректно.")
         full_name = self.line_edit1.text()
         login = self.line_edit2.text()
+        passed = 0
         password = self.line_edit3.text()
         salt = "saltingmypc"
         password_bytes = password.encode()
@@ -377,8 +378,8 @@ class Auth(QWidget):
         password = hashed_password.hexdigest()
 
         # Вставка данных в базу данных SQLite
-        cursor.execute('''INSERT INTO users (full_name, login, password) VALUES (?, ?, ?)''',
-                       (full_name, login, password))
+        cursor.execute('''INSERT INTO users (full_name, login, password, passed) VALUES (?, ?, ?, ?)''',
+                       (full_name, login, password, passed))
 
         # Сохранение изменений и закрытие соединения
         conn.commit()
@@ -526,6 +527,7 @@ class Auth(QWidget):
 
         full_name = "MODER"
         login = self.line_edit1.text()
+        passed = -1
 
         salt = "saltingmypc"
         password = self.line_edit2.text()
@@ -545,11 +547,12 @@ class Auth(QWidget):
                                     id INTEGER PRIMARY KEY,
                                     full_name TEXT,
                                     login TEXT,
-                                    password TEXT
+                                    password TEXT,
+                                    passed INT
                                 )''')
 
-        data_tuple = (full_name, login, password)
-        cursor.execute('''INSERT INTO users (full_name, login, password) VALUES (?, ?, ?)''', data_tuple)
+        data_tuple = (full_name, login, password, passed)
+        cursor.execute('''INSERT INTO users (full_name, login, password, passed) VALUES (?, ?, ?, ?)''', data_tuple)
 
         # Сохранение изменений и закрытие соединения
         conn.commit()

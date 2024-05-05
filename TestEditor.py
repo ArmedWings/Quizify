@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, Q
 from PySide6.QtCore import Qt, QTime
 
 class TestEditor(QWidget):
-    def __init__(self, main_window=None):
+    def __init__(self, main_window=None, name=None):
         super().__init__()
         self.main_window = main_window
 
@@ -92,6 +92,43 @@ class TestEditor(QWidget):
         # Устанавливаем горизонтальный компоновщик с кнопками внизу окна
         vertical_layout.addStretch(1)
         vertical_layout.addLayout(buttons_layout)
+        if name is not None:
+            self.populate_fields_from_database(name)
+
+    def populate_fields_from_database(self, name):
+        # Чтение пути к папке с базой данных из файла конфигурации
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+
+        # Создание пути к файлу базы данных
+        db_path = os.path.join(folder_path, "tests.db")
+
+        # Подключение к базе данных
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Выборка данных из базы данных
+        cursor.execute("SELECT name, attempts, time FROM tests WHERE name = ?", (name,))
+        test_data = cursor.fetchone()
+
+        if test_data:
+            # Заполнение полей данными из базы данных
+            self.test_name_edit.setText(test_data[0])
+            self.attempts_edit.setText(str(test_data[1]))
+            time = QTime.fromString(test_data[2], "HH:mm:ss")
+            self.time_edit.setTime(time)
+
+        # Закрытие соединения с базой данных
+        conn.close()
 
     def cancel_clicked(self):
         print("Отмена")
@@ -144,6 +181,7 @@ class TestEditor(QWidget):
                                 name TEXT,
                                 attempts INTEGER,
                                 time TEXT,
+                                amount INT,
                                 visible TEXT
                             )''')
 
@@ -151,11 +189,12 @@ class TestEditor(QWidget):
         name = self.test_name_edit.text()
         attempts = self.attempts_edit.text()
         time = self.time_edit.time().toString("HH:mm:ss")
+        amount = -1
         visible = "False"  # Устанавливаем значение "False" для новой записи
 
         # Вставка данных в базу данных
-        cursor.execute("INSERT INTO tests (name, attempts, time, visible) VALUES (?, ?, ?, ?)",
-                       (name, attempts, time, visible))
+        cursor.execute("INSERT INTO tests (name, attempts, time, amount, visible) VALUES (?, ?, ?, ?, ?)",
+                       (name, attempts, time, amount, visible))
         conn.commit()
         conn.close()
 

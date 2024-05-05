@@ -56,10 +56,13 @@ class ModerPage(QWidget):
 
         self.frame1_layout = QVBoxLayout()
         self.frame1.setLayout(self.frame1_layout)
+        self.frame2_layout = QVBoxLayout()
+        self.frame2.setLayout(self.frame2_layout)
 
         self.adjust_label_position()
         self.resizeEvent = self.on_resize
         self.fill_frame1_users()
+        self.fill_frame2_tests()
 
     def fill_frame1_users(self):
         # Очистка всего содержимого frame1_layout
@@ -69,7 +72,6 @@ class ModerPage(QWidget):
             if widget:
                 widget.deleteLater()
 
-        # Добавление отступа и лэйбла "Пользователи"
         self.frame1_layout.addSpacing(10)
         label_users = QLabel("Пользователи", self.frame1)
         label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -77,7 +79,6 @@ class ModerPage(QWidget):
         self.frame1_layout.addWidget(label_users)
         self.frame1_layout.addSpacing(10)
 
-        # Добавление лэйблов "Пользователь" и "Пройдено тестов"
         h_layout = QHBoxLayout()
         label_user = QLabel("Пользователь", self.frame1)
         label_user.setStyleSheet("font-size: 14pt;")
@@ -100,28 +101,97 @@ class ModerPage(QWidget):
             print("Файл конфигурации не найден")
             return
         print(folder_path)
-        # Создание пути к файлу базы данных
         db_path = os.path.join(folder_path, "users.db")
 
-        # Подключение к базе данных
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         # Запрос на получение данных о пользователях, кроме первого
-        cursor.execute("SELECT full_name FROM users LIMIT -1 OFFSET 1")
+        cursor.execute("SELECT full_name, passed FROM users LIMIT -1 OFFSET 1")
         users = cursor.fetchall()
 
         # Создание кнопок для каждого пользователя
         for user in users:
-            user_button = QPushButton(user[0], self.frame1)
-            user_button.setStyleSheet("font-size: 14pt; text-align: left;")
+            user_button = DualTextButton(user[0], str(user[1]), self.frame1)
+            user_button.setStyleSheet("font-size: 14pt;")
             self.frame1_layout.addWidget(user_button)
 
-        # Закрытие соединения с базой данных
         conn.close()
 
-        # Добавление растягивающегося пространства внизу
         self.frame1_layout.addStretch()
+
+    def fill_frame2_tests(self):
+        # Очистка всего содержимого frame1_layout
+        while self.frame2_layout.count():
+            item = self.frame2_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.frame2_layout.addSpacing(10)
+        label_users = QLabel("Тестирования", self.frame1)
+        label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_users.setStyleSheet("font-size: 16pt;")
+        self.frame2_layout.addWidget(label_users)
+        self.frame2_layout.addSpacing(10)
+
+        h_layout = QHBoxLayout()
+        label_user = QLabel("Название", self.frame1)
+        label_user.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_user)
+        h_layout.addStretch()
+        label_passed_tests = QLabel("Вопросов", self.frame1)
+        label_passed_tests.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_passed_tests)
+        self.frame2_layout.addLayout(h_layout)
+
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+        print(folder_path)
+        db_path = os.path.join(folder_path, "tests.db")
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Запрос на получение данных о пользователях, кроме первого
+        cursor.execute("SELECT name, amount FROM tests")
+        tests = cursor.fetchall()
+
+        # Создание кнопок для каждого пользователя
+        for test in tests:
+            test_button = DualTextButton(test[0], str(test[1]), self)
+            test_button.setStyleSheet("font-size: 14pt;")
+            test_button.clicked.connect(self.show_selected_test)  # Соединяем сигнал clicked с обработчиком
+            self.frame2_layout.addWidget(test_button)
+
+        conn.close()
+
+        self.frame2_layout.addStretch()
+
+    def show_selected_test(self):
+        sender_button = self.sender()  # Получаем отправителя сигнала
+        if isinstance(sender_button, DualTextButton):  # Проверяем, является ли отправитель кнопкой DualTextButton
+            left_text = sender_button.left_label.text()  # Получаем текст слева от кнопки
+            print(f"Selected test: {left_text}")
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            from TestEditor import TestEditor
+            testeditor_page = TestEditor(main_window=self.main_window, name=left_text)
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(testeditor_page)
+
     def logout_icon_clicked(self, event):
         reply = QMessageBox.question(None, 'Выход',
                                      'Вы уверены, что хотите выйти из аккаунта?',
@@ -185,6 +255,21 @@ class ModerPage(QWidget):
         x_right = (self.width() - self.logout_icon.width())
         self.logout_icon.move(x_right, 50 - self.logout_icon.height()//2)
         self.plus_icon.move(x, 50 - self.plus_icon.height()//2)
+
+
+class DualTextButton(QPushButton):
+    def __init__(self, left_text, right_text, parent=None):
+        super().__init__(parent)
+
+        self.left_label = QLabel(left_text)
+        self.right_label = QLabel(right_text)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.left_label)
+        layout.addStretch(1)
+        layout.addWidget(self.right_label)
+
+        self.setLayout(layout)
 
 
 class GradientBorderFrame(QFrame):
