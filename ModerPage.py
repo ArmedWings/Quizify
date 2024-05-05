@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QPushButton, QApplication, QHBoxLayout, QSizePolicy, QSpacerItem, QLineEdit, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QPushButton, QApplication, QHBoxLayout, QSizePolicy, QSpacerItem, QLineEdit, QFileDialog, QMessageBox, QScrollArea
 from PySide6.QtGui import QPainter, QLinearGradient, QBrush, QPen, QImage, QPixmap
 from PySide6.QtCore import QSize, Qt
 
@@ -110,15 +110,34 @@ class ModerPage(QWidget):
         cursor.execute("SELECT full_name, passed FROM users LIMIT -1 OFFSET 1")
         users = cursor.fetchall()
 
+        # Создаем экземпляр QScrollArea
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)  # Позволяет автоматически изменять размеры области прокрутки
+
+        # Создаем виджет, который будет содержать кнопки
+        scroll_widget = QWidget()
+        scroll_widget_layout = QVBoxLayout(scroll_widget)
+
         # Создание кнопок для каждого пользователя
         for user in users:
             user_button = DualTextButton(user[0], str(user[1]), self.frame1)
-            user_button.setStyleSheet("font-size: 14pt;")
-            self.frame1_layout.addWidget(user_button)
+            user_button.setStyleSheet("font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")
+            user_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
+            user_button.enterEvent = lambda event, button=user_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #111111; border: 1px solid #7E7E7E;")  # Устанавливаем стиль для наведения мыши
+            user_button.leaveEvent = lambda event, button=user_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
+            scroll_widget_layout.addWidget(user_button)
+        scroll_widget_layout.addStretch()
 
+        # Устанавливаем виджет в QScrollArea
+        scroll_area.setWidget(scroll_widget)
+
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
         conn.close()
 
-        self.frame1_layout.addStretch()
+        # Добавляем QScrollArea в ваш текущий макет
+        self.frame1_layout.addWidget(scroll_area)
 
     def fill_frame2_tests(self):
         # Очистка всего содержимого frame1_layout
@@ -166,16 +185,37 @@ class ModerPage(QWidget):
         cursor.execute("SELECT name, amount FROM tests")
         tests = cursor.fetchall()
 
+        # Создаем экземпляр QScrollArea
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)  # Позволяет автоматически изменять размеры области прокрутки
+
+        # Создаем виджет, который будет содержать кнопки
+        scroll_widget = QWidget()
+        scroll_widget_layout = QVBoxLayout(scroll_widget)
+        #scroll_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         # Создание кнопок для каждого пользователя
         for test in tests:
             test_button = DualTextButton(test[0], str(test[1]), self)
-            test_button.setStyleSheet("font-size: 14pt;")
+            test_button.setStyleSheet("font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")
+            test_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
+            test_button.enterEvent = lambda event, button=test_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #111111; border: 1px solid #7E7E7E;")  # Устанавливаем стиль для наведения мыши
+            test_button.leaveEvent = lambda event, button=test_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
             test_button.clicked.connect(self.show_selected_test)  # Соединяем сигнал clicked с обработчиком
-            self.frame2_layout.addWidget(test_button)
+            scroll_widget_layout.addWidget(test_button)
+        scroll_widget_layout.addStretch()
+        # Устанавливаем виджет в QScrollArea
+        scroll_area.setWidget(scroll_widget)
+        #scroll_area.setStyleSheet("background: black;")
 
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
         conn.close()
 
-        self.frame2_layout.addStretch()
+        # Добавляем QScrollArea в ваш текущий макет
+        self.frame2_layout.addWidget(scroll_area)
+        #self.frame2_layout.addStretch()
 
     def show_selected_test(self):
         sender_button = self.sender()  # Получаем отправителя сигнала
@@ -268,6 +308,8 @@ class DualTextButton(QPushButton):
         layout.addWidget(self.left_label)
         layout.addStretch(1)
         layout.addWidget(self.right_label)
+        self.left_label.setStyleSheet("border: none")
+        self.right_label.setStyleSheet("border: none")
 
         self.setLayout(layout)
 

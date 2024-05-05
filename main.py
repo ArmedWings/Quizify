@@ -246,6 +246,38 @@ class MainWindow(QMainWindow):
                     QLabel {
                         color: white; /* устанавливаем белый цвет текста на иконках */
                     }
+                    QScrollArea {
+                        background: #1C1B1B; /* Цвет фона */
+                        border: none; /* Убираем границу */
+                    }
+                    QScrollBar:vertical {
+                        background: #1C1B1B; /* Цвет фона полосы прокрутки */
+                        border: none; /* Убираем границу */
+                        width: 10px; /* Ширина полосы прокрутки */
+                        margin: 0px 0px 0px 0px;
+                    }
+                    QScrollBar::handle:vertical {
+                        background: #131313; /* Цвет фона области ползунка */
+                        min-height: 20px; /* Минимальная высота области ползунка */
+                        border-radius: 5px; /* Радиус скругления углов области ползунка */
+                    }
+                    QScrollBar::handle:vertical:hover {
+                        background: #101010; /* Цвет фона области ползунка при наведении */
+                    }
+                    QScrollBar::add-line:vertical {
+                        background: #1C1B1B; /* Цвет фона верхней кнопки */
+                        height: 0px; /* Высота верхней кнопки */
+                    }
+                    QScrollBar::sub-line:vertical {
+                        background: #1C1B1B; /* Цвет фона нижней кнопки */
+                        height: 0px; /* Высота нижней кнопки */
+                    }
+                    QScrollBar::add-page:vertical {
+                        background: #1C1B1B; /* Цвет фона за ползунком */
+                    }
+                    QScrollBar::sub-page:vertical {
+                        background: #1C1B1B; /* Цвет фона перед ползунком */
+                    }
                 """)
 
         # Изменяем на горизонтальный компоновщик
