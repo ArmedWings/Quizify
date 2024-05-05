@@ -10,6 +10,7 @@ class TestEditor(QWidget):
     def __init__(self, main_window=None, name=None):
         super().__init__()
         self.main_window = main_window
+        self.name = name
 
         # Новый вертикальный компоновщик для всех элементов
         vertical_layout = QVBoxLayout(self)
@@ -92,10 +93,10 @@ class TestEditor(QWidget):
         # Устанавливаем горизонтальный компоновщик с кнопками внизу окна
         vertical_layout.addStretch(1)
         vertical_layout.addLayout(buttons_layout)
-        if name is not None:
-            self.populate_fields_from_database(name)
+        if self.name is not None:
+            self.populate_fields_from_database()
 
-    def populate_fields_from_database(self, name):
+    def populate_fields_from_database(self):
         # Чтение пути к папке с базой данных из файла конфигурации
         config_path = "config.txt"
         folder_path = ""
@@ -117,7 +118,7 @@ class TestEditor(QWidget):
         cursor = conn.cursor()
 
         # Выборка данных из базы данных
-        cursor.execute("SELECT name, attempts, time FROM tests WHERE name = ?", (name,))
+        cursor.execute("SELECT name, attempts, time FROM tests WHERE name = ?", (self.name,))
         test_data = cursor.fetchone()
 
         if test_data:
@@ -132,12 +133,28 @@ class TestEditor(QWidget):
 
     def cancel_clicked(self):
         print("Отмена")
-        reply = QMessageBox.question(None, 'Выход',
-                                     'Вы уверены, что хотите отменить изменения?',
-                                     QMessageBox.Yes | QMessageBox.No,
-                                     QMessageBox.No)
 
-        if reply == QMessageBox.Yes:
+        # Проверка совпадения данных с базой
+        if self.check_for_changes():
+            # Если есть изменения, спросить пользователя, хочет ли он сохранить их
+            reply = QMessageBox.question(None, 'Выход',
+                                         'Есть несохраненные изменения. Выйти без сохранения?',
+                                         QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                while self.main_window.main_layout.count():
+                    item = self.main_window.main_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                from ModerPage import ModerPage
+                moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6",
+                                       gradient_color2="#29B2D5")
+                self.main_window.main_layout.removeWidget(self)
+                self.main_window.main_layout.addWidget(moder_page)
+        else:
+            # Если изменений нет, просто закрыть окно и вернуться на другую страницу
             while self.main_window.main_layout.count():
                 item = self.main_window.main_layout.takeAt(0)
                 widget = item.widget()
@@ -147,11 +164,9 @@ class TestEditor(QWidget):
             moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(moder_page)
-        # Дополнительные действия по желанию
 
     def edit_questions_clicked(self):
         print("Редактировать вопросы")
-        # Дополнительные действия по желанию
 
     def save_clicked(self):
         print("Сохранить")
@@ -192,10 +207,62 @@ class TestEditor(QWidget):
         amount = -1
         visible = "False"  # Устанавливаем значение "False" для новой записи
 
-        # Вставка данных в базу данных
-        cursor.execute("INSERT INTO tests (name, attempts, time, amount, visible) VALUES (?, ?, ?, ?, ?)",
-                       (name, attempts, time, amount, visible))
+        # Проверка, создавать новую запись или редактировать существующую
+        if self.name is None:
+            # Создание новой записи
+            cursor.execute("INSERT INTO tests (name, attempts, time, amount, visible) VALUES (?, ?, ?, ?, ?)",
+                           (name, attempts, time, amount, visible))
+        else:
+            # Редактирование существующей записи
+            cursor.execute("UPDATE tests SET name=?, attempts=?, time=?, amount=?, visible=? WHERE name=?",
+                           (name, attempts, time, amount, visible, self.name))
+        self.name=name
         conn.commit()
         conn.close()
 
         print("Данные успешно сохранены в базу данных")
+
+    def check_for_changes(self):
+        # Получение данных из полей ввода
+        name = self.test_name_edit.text()
+        attempts = self.attempts_edit.text()
+        time = self.time_edit.time().toString("HH:mm:ss")
+
+        # Чтение пути к папке с базой данных из файла конфигурации
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return False
+
+        # Создание пути к файлу базы данных
+        db_path = os.path.join(folder_path, "tests.db")
+
+        # Подключение к базе данных
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Получение данных из базы данных
+        cursor.execute("SELECT * FROM tests WHERE name=?", (self.name,))
+        result = cursor.fetchone()
+
+        conn.close()
+
+        # Проверка совпадения данных
+        if result is None:
+            # Запись не найдена в базе данных
+            return False
+        else:
+            # Сравнение данных из базы данных с данными из полей ввода
+            if name == result[1] and attempts == str(result[2]) and time == result[3]:
+                # Данные совпадают
+                return False
+            else:
+                # Данные не совпадают
+                return True
