@@ -25,7 +25,7 @@ class ModerPage(QWidget):
         plus_icon_pixmap = self.load_and_render_svg(plus_icon_path, self.gradient_color1, self.gradient_color2)
         plus_icon_pixmap = plus_icon_pixmap.scaled(QSize(80, 80), Qt.KeepAspectRatio)
         self.plus_icon.setPixmap(plus_icon_pixmap)
-        # self.back_icon.mousePressEvent = self.back_icon_clicked
+        self.plus_icon.mousePressEvent = self.plus_icon_clicked
 
         # Создаем вертикальный макет для второго фрейма и добавляем отступ
         layout_frame2 = QVBoxLayout()
@@ -71,6 +71,23 @@ class ModerPage(QWidget):
             auth_page = Auth(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(auth_page)
+
+    def plus_icon_clicked(self, event):
+        reply = QMessageBox.question(None, 'Новый тест',
+                                     'Создать новый тест?',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            from TestEditor import TestEditor
+            testeditor_page = TestEditor(main_window=self.main_window)
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(testeditor_page)
 
     def load_and_render_svg(self, filename, gradient_color1, gradient_color2):
         image = QImage(filename)
