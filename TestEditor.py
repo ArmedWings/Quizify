@@ -1,8 +1,9 @@
+
+
+
 import sys
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit
 from PySide6.QtCore import Qt, QTime
-from PySide6 import QtGui
-
 
 class TestEditor(QWidget):
     def __init__(self, main_window=None):
@@ -20,7 +21,7 @@ class TestEditor(QWidget):
         # Лэйбл "Редактирование теста"
         label_editing = QLabel("Редактирование теста", self)
         label_editing.setAlignment(Qt.Alignment.AlignCenter)  # Выравнивание по центру
-        label_editing.setFont(QtGui.QFont("Arial", 16))  # Установка крупного шрифта
+        label_editing.setStyleSheet("font-size: 16pt;")  # Применение стиля CSS для изменения размера шрифта
         vertical_layout.addWidget(label_editing)
 
         vertical_layout.addSpacing(50)
@@ -29,7 +30,7 @@ class TestEditor(QWidget):
 
         # Название теста
         label_test_name = QLabel("Название теста:", self)
-        label_test_name.setFont(QtGui.QFont("Arial", 12))  # Установка крупного шрифта
+        label_test_name.setStyleSheet("font-size: 12pt;")  # Применение стиля CSS для изменения размера шрифта
         self.test_name_edit = QLineEdit(self)
         vertical_layout.addWidget(label_test_name)
         vertical_layout.addWidget(self.test_name_edit)
@@ -39,9 +40,9 @@ class TestEditor(QWidget):
         # Вертикальный компоновщик для "Количество попыток"
         labels_layout = QHBoxLayout()
         label_attempts = QLabel("Количество попыток:", self)
-        label_attempts.setFont(QtGui.QFont("Arial", 12))  # Установка крупного шрифта
+        label_attempts.setStyleSheet("font-size: 12pt;")  # Применение стиля CSS для изменения размера шрифта
         label_time = QLabel("Время на прохождение теста (чч:мм:сс):", self)
-        label_time.setFont(QtGui.QFont("Arial", 12))  # Установка крупного шрифта
+        label_time.setStyleSheet("font-size: 12pt;")  # Применение стиля CSS для изменения размера шрифта
         labels_layout.addWidget(label_attempts)
         labels_layout.addStretch(1)
         labels_layout.addWidget(label_time)
@@ -69,13 +70,36 @@ class TestEditor(QWidget):
         # Кнопки
         buttons_layout = QHBoxLayout()
         cancel_button = QPushButton("Отмена", self)
+        cancel_button.setFixedSize(150, 50)  # Установка фиксированного размера кнопки
+        cancel_button.setStyleSheet("font-size: 12pt; border-radius: 25px")  # Применение стиля CSS для изменения размера шрифта
+        cancel_button.clicked.connect(self.cancel_clicked)
         edit_questions_button = QPushButton("Редактировать вопросы", self)
+        edit_questions_button.setFixedSize(200, 50)  # Установка фиксированного размера кнопки
+        edit_questions_button.setStyleSheet("font-size: 12pt; border-radius: 25px")  # Применение стиля CSS для изменения размера шрифта
+        edit_questions_button.clicked.connect(self.edit_questions_clicked)
         save_button = QPushButton("Сохранить", self)
+        save_button.setFixedSize(150, 50)  # Установка фиксированного размера кнопки
+        save_button.setStyleSheet("font-size: 12pt; border-radius: 25px")  # Применение стиля CSS для изменения размера шрифта
+        save_button.clicked.connect(self.save_clicked)
         buttons_layout.addWidget(cancel_button)
+        buttons_layout.addStretch(1)
         buttons_layout.addWidget(edit_questions_button)
+        buttons_layout.addStretch(1)
         buttons_layout.addWidget(save_button)
         buttons_layout.setAlignment(Qt.Alignment.AlignCenter)  # Выравнивание по центру
 
         # Устанавливаем горизонтальный компоновщик с кнопками внизу окна
         vertical_layout.addStretch(1)
         vertical_layout.addLayout(buttons_layout)
+
+    def cancel_clicked(self):
+        print("Отмена")
+        # Дополнительные действия по желанию
+
+    def edit_questions_clicked(self):
+        print("Редактировать вопросы")
+        # Дополнительные действия по желанию
+
+    def save_clicked(self):
+        print("Сохранить")
+        # Дополнительные действия по желанию
