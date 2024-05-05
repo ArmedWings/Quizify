@@ -328,7 +328,7 @@ class Auth(QWidget):
             return
 
         # Проверка на наличие недопустимых символов
-        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
         for line_edit in line_edits:
             text = line_edit.text()
             if not all(char in valid_chars for char in text):
@@ -498,7 +498,7 @@ class Auth(QWidget):
             return
 
         # Проверка на наличие недопустимых символов
-        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
         for line_edit in line_edits:
             text = line_edit.text()
             if not all(char in valid_chars for char in text):

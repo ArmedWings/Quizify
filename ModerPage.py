@@ -17,8 +17,8 @@ class ModerPage(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Создаем два фрейма
-        frame1 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
-        frame2 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
+        self.frame1 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
+        self.frame2 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
 
         self.plus_icon = QLabel(self)
         plus_icon_path = "icons/plus.svg"  # Путь к файлу SVG
@@ -30,10 +30,12 @@ class ModerPage(QWidget):
         # Создаем вертикальный макет для второго фрейма и добавляем отступ
         layout_frame2 = QVBoxLayout()
         layout_frame2.addSpacing(100)
-        layout_frame2.addWidget(frame2)
+        layout_frame2.addWidget(self.frame2)
+
+
 
         # Добавляем фреймы в главный макет
-        main_layout.addWidget(frame1)
+        main_layout.addWidget(self.frame1)
         main_layout.addLayout(layout_frame2)
 
         # Растягиваем фреймы по горизонтали
@@ -52,9 +54,74 @@ class ModerPage(QWidget):
         self.logout_icon.setFixedSize(logout_size)
         self.plus_icon.setFixedSize(plus_size)
 
+        self.frame1_layout = QVBoxLayout()
+        self.frame1.setLayout(self.frame1_layout)
+
         self.adjust_label_position()
         self.resizeEvent = self.on_resize
+        self.fill_frame1_users()
 
+    def fill_frame1_users(self):
+        # Очистка всего содержимого frame1_layout
+        while self.frame1_layout.count():
+            item = self.frame1_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        # Добавление отступа и лэйбла "Пользователи"
+        self.frame1_layout.addSpacing(10)
+        label_users = QLabel("Пользователи", self.frame1)
+        label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_users.setStyleSheet("font-size: 16pt;")
+        self.frame1_layout.addWidget(label_users)
+        self.frame1_layout.addSpacing(10)
+
+        # Добавление лэйблов "Пользователь" и "Пройдено тестов"
+        h_layout = QHBoxLayout()
+        label_user = QLabel("Пользователь", self.frame1)
+        label_user.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_user)
+        h_layout.addStretch()
+        label_passed_tests = QLabel("Пройдено тестов", self.frame1)
+        label_passed_tests.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_passed_tests)
+        self.frame1_layout.addLayout(h_layout)
+
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+        print(folder_path)
+        # Создание пути к файлу базы данных
+        db_path = os.path.join(folder_path, "users.db")
+
+        # Подключение к базе данных
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Запрос на получение данных о пользователях, кроме первого
+        cursor.execute("SELECT full_name FROM users LIMIT -1 OFFSET 1")
+        users = cursor.fetchall()
+
+        # Создание кнопок для каждого пользователя
+        for user in users:
+            user_button = QPushButton(user[0], self.frame1)
+            user_button.setStyleSheet("font-size: 14pt; text-align: left;")
+            self.frame1_layout.addWidget(user_button)
+
+        # Закрытие соединения с базой данных
+        conn.close()
+
+        # Добавление растягивающегося пространства внизу
+        self.frame1_layout.addStretch()
     def logout_icon_clicked(self, event):
         reply = QMessageBox.question(None, 'Выход',
                                      'Вы уверены, что хотите выйти из аккаунта?',
