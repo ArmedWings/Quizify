@@ -4,7 +4,7 @@ from PySide6.QtCore import QSize, Qt
 import os
 import sqlite3
 import hashlib
-from ModerPage import ModerPage
+
 from functools import partial
 
 class Auth(QWidget):
@@ -659,6 +659,7 @@ class Auth(QWidget):
             widget = item.widget()
             if widget:
                 widget.deleteLater()
+        from ModerPage import ModerPage
         moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
         self.main_window.main_layout.removeWidget(self)
         self.main_window.main_layout.addWidget(moder_page)
