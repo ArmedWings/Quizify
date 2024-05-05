@@ -1,8 +1,9 @@
 
 
-
+import os
+import sqlite3  # Для работы с SQLite
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit, QMessageBox
 from PySide6.QtCore import Qt, QTime
 
 class TestEditor(QWidget):
@@ -94,6 +95,21 @@ class TestEditor(QWidget):
 
     def cancel_clicked(self):
         print("Отмена")
+        reply = QMessageBox.question(None, 'Выход',
+                                     'Вы уверены, что хотите отменить изменения?',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            from ModerPage import ModerPage
+            moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(moder_page)
         # Дополнительные действия по желанию
 
     def edit_questions_clicked(self):
@@ -102,4 +118,45 @@ class TestEditor(QWidget):
 
     def save_clicked(self):
         print("Сохранить")
-        # Дополнительные действия по желанию
+        # Чтение пути к папке с базой данных из файла конфигурации
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+        print(folder_path)
+        # Создание пути к файлу базы данных
+        db_path = os.path.join(folder_path, "tests.db")
+
+        # Подключение к базе данных
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Создание таблицы, если она не существует
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tests (
+                                id INTEGER PRIMARY KEY,
+                                name TEXT,
+                                attempts INTEGER,
+                                time TEXT,
+                                visible TEXT
+                            )''')
+
+        # Получение данных из полей ввода
+        name = self.test_name_edit.text()
+        attempts = self.attempts_edit.text()
+        time = self.time_edit.time().toString("HH:mm:ss")
+        visible = "False"  # Устанавливаем значение "False" для новой записи
+
+        # Вставка данных в базу данных
+        cursor.execute("INSERT INTO tests (name, attempts, time, visible) VALUES (?, ?, ?, ?)",
+                       (name, attempts, time, visible))
+        conn.commit()
+        conn.close()
+
+        print("Данные успешно сохранены в базу данных")
