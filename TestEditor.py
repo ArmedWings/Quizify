@@ -193,7 +193,7 @@ class TestEditor(QWidget):
                 if widget:
                     widget.deleteLater()
             from QuestionEditor import QuestionEditor
-            question_page = QuestionEditor(main_window=self.main_window)
+            question_page = QuestionEditor(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(question_page)
 
