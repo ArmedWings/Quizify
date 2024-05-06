@@ -167,6 +167,35 @@ class TestEditor(QWidget):
 
     def edit_questions_clicked(self):
         print("Редактировать вопросы")
+        if self.check_for_changes():
+            # Если есть изменения, спросить пользователя, хочет ли он сохранить их
+            reply = QMessageBox.question(None, 'Сохранение',
+                                         'Сохранить изменения?',
+                                         QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                self.save_clicked()
+                while self.main_window.main_layout.count():
+                    item = self.main_window.main_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                from QuestionEditor import QuestionEditor
+                question_page = QuestionEditor(main_window=self.main_window)
+                self.main_window.main_layout.removeWidget(self)
+                self.main_window.main_layout.addWidget(question_page)
+        else:
+            # Если изменений нет, просто закрыть окно и вернуться на другую страницу
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            from QuestionEditor import QuestionEditor
+            question_page = QuestionEditor(main_window=self.main_window)
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(question_page)
 
     def save_clicked(self):
         print("Сохранить")
