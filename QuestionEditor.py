@@ -1,6 +1,6 @@
 import sqlite3
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import QBrush, QLinearGradient, QPainter, QImage, QPixmap
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit, QMessageBox, QComboBox, QRadioButton, QCheckBox, QDateEdit
 from PySide6.QtCore import Qt, QTime, QDate, QSize
@@ -55,14 +55,7 @@ class QuestionEditor(QWidget):
 
         self.create_buttons()
         #Заполняем интерфейс если есть инфа
-        question_count, last_question_info = self.get_questions_info()
-        if question_count != 0:
-            self.label_editing.setText("Вопрос №"+str(question_count))
-            self.test_name_edit.setText(last_question_info[2])
-            self.answer_type_combo.setCurrentIndex(last_question_info[5])
-            self.update_answer_controls(last_question_info[5])
-            self.score_edit.setText(str(last_question_info[6]))
-            #дальше заполнить варианты, а ещё лучше - сделать всё в функции.
+        self.process_last_question_info()
 
 
         self.answer_type_combo.currentIndexChanged.connect(self.update_answer_controls)
@@ -223,6 +216,7 @@ class QuestionEditor(QWidget):
                 new_date_edit = QDateEdit(self)
                 new_date_edit.setFixedSize(150, 30)
                 new_date_edit.setDate(QDate.currentDate())
+                new_date_edit.setDisplayFormat("dd.MM.yyyy")
                 new_date_edit.setCalendarPopup(True)
 
                 # Создаем метку для удаления строки
@@ -292,6 +286,7 @@ class QuestionEditor(QWidget):
         date_edit = QDateEdit(self)
         date_edit.setCalendarPopup(True)
         date_edit.setDate(QDate.currentDate())
+        date_edit.setDisplayFormat("dd.MM.yyyy")
         date_edit.setFixedSize(150, 30)
         date_layout.addWidget(date_edit)
         date_layout.addStretch()
@@ -459,6 +454,62 @@ class QuestionEditor(QWidget):
         else:
             print("Тест с именем", test_name, "не найден.")
 
+    def process_last_question_info(self):
+        question_count, last_question_info = self.get_questions_info()
+        self.question_number = 0
+        if question_count != 0:
+            print("Вопросов в тесте", question_count)
+            self.label_editing.setText("Вопрос №" + str(question_count))
+            self.test_name_edit.setText(last_question_info[2])
+            self.answer_type_combo.setCurrentIndex(last_question_info[5])
+            self.update_answer_controls(last_question_info[5])
+            self.score_edit.setText(str(last_question_info[6]))
+
+            answer_type_index = self.answer_type_combo.currentIndex()
+            answer_elements = last_question_info[3].split(';')
+
+            answer_type_index = self.answer_type_combo.currentIndex()
+            options_elements = last_question_info[3].split(';')
+            answers = last_question_info[4].split(';')
+
+            if answer_type_index == 2 or answer_type_index == 3:
+                iterations = len(options_elements) + 1
+            else:
+                iterations = len(options_elements)
+
+            for _ in range(iterations - 2):
+                self.plus_icon_clicked(event=None)
+
+            # Присваиваем значения элементам LineEdit в QHBox
+            qhbox_count = self.question_layout.count()
+            for i in range(qhbox_count):
+                qhbox = self.question_layout.itemAt(i).layout()
+                if isinstance(qhbox, QtWidgets.QHBoxLayout):
+                    line_edit_count = qhbox.count()
+                    for j in range(line_edit_count):
+                        if answer_type_index == 3:
+                            date_widget = qhbox.itemAt(j).widget()
+                            print("№3")
+                            if isinstance(date_widget, QtWidgets.QDateEdit):
+                                if options_elements:
+                                    value = options_elements.pop(0)
+                                    date = QtCore.QDate.fromString(value, "dd.MM.yyyy")
+                                    date_widget.setDate(date)
+                        else:
+                            line_edit = qhbox.itemAt(j).widget()
+                            if isinstance(line_edit, QtWidgets.QLineEdit):
+                                if options_elements:
+                                    value = options_elements.pop(0)
+                                    line_edit.setText(value)
+                                    print(value)
+
+                                    if answer_type_index == 1 or answer_type_index == 2:
+                                        for answer in answers:
+                                            if answer == value:
+                                                checkbox = qhbox.itemAt(j).widget()
+                                                if isinstance(checkbox, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+                                                    checkbox.setChecked(True)
+                                                break
     def get_questions_info(self):
         # Путь к файлу базы данных
         config_path = "config.txt"
