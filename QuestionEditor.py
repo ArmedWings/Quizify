@@ -56,6 +56,8 @@ class QuestionEditor(QWidget):
         self.create_buttons()
         self.get_questions_count()
         self.question_number = self.question_count
+        if self.question_number == 0:
+            self.question_number+=1
         self.fill_page()
 
 
@@ -331,6 +333,7 @@ class QuestionEditor(QWidget):
         self.main_layout.addLayout(buttons_layout)
 
     def prev_button_handler(self):
+        self.save_info()
         if self.question_number != 1:
             self.question_number -= 1
         else:
@@ -338,6 +341,7 @@ class QuestionEditor(QWidget):
         self.fill_page()
 
     def next_button_handler(self):
+        self.save_info()
         if self.question_number <= self.question_count:
             self.question_number += 1
         if self.question_number <= self.question_count:
@@ -346,6 +350,15 @@ class QuestionEditor(QWidget):
             self.unfill_page()
     def save_button_handler(self):
         self.save_info()
+        while self.main_window.main_layout.count():
+            item = self.main_window.main_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        from TestEditor import TestEditor
+        testeditor_page = TestEditor(main_window=self.main_window, name=self.name)
+        self.main_window.main_layout.removeWidget(self)
+        self.main_window.main_layout.addWidget(testeditor_page)
     def save_info(self):
         print("SAVE")
         # Путь к файлу базы данных
@@ -455,13 +468,21 @@ class QuestionEditor(QWidget):
             score = self.score_edit.text()
 
             # Вставка новых данных в таблицу 'questions'
-            cursor.execute(
-                "INSERT INTO questions (test_id, question, options, answer, type, score) VALUES (?, ?, ?, ?, ?, ?)",
-                (test_id, question, options_str, answer, answer_type, score))
+            if self.question_number > self.question_count:
+                # Добавляем новый вопрос
+                cursor.execute(
+                    "INSERT INTO questions (test_id, question, options, answer, type, score) VALUES (?, ?, ?, ?, ?, ?)",
+                    (test_id, question, options_str, answer, answer_type, score))
+            else:
+                # Перезаписываем существующий вопрос
+                cursor.execute(
+                    "UPDATE questions SET question=?, options=?, answer=?, type=?, score=? WHERE test_id=? AND rowid = (SELECT rowid FROM questions WHERE test_id=? LIMIT 1 OFFSET ?)",
+                    (question, options_str, answer, answer_type, score, test_id, test_id, self.question_number - 1))
 
             # Применение изменений и закрытие соединения с базой данных
             conn.commit()
             conn.close()
+            self.get_questions_count()
         else:
             print("Тест с именем", test_name, "не найден.")
 
@@ -624,6 +645,44 @@ class QuestionEditor(QWidget):
         self.question_count = cursor.fetchone()[0]
     def delete_button_handler(self):
         print("DELETE")
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+
+        # Создание соединения с базой данных
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+        test_name = self.name
+        cursor.execute("SELECT id FROM tests WHERE name=?", (test_name,))
+        row = cursor.fetchone()
+
+        if row:
+            test_id = row[0]
+
+            # Удаляем вопрос с заданным порядковым номером
+            cursor.execute(
+                "DELETE FROM questions WHERE rowid = (SELECT rowid FROM questions WHERE test_id=? LIMIT 1 OFFSET ?)",
+                (test_id, self.question_number - 1))
+
+            # Применение изменений и закрытие соединения с базой данных
+            conn.commit()
+            conn.close()
+            self.get_questions_count()
+        else:
+            print("Тест с именем", test_name, "не найден.")
+        if self.question_number != 1:
+            self.question_number -= 1
+        else:
+            self.question_number = self.question_count
+        self.fill_page()
     def cancel_button_handler(self):
         print("CANCEL")
         while self.main_window.main_layout.count():
