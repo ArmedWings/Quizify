@@ -64,7 +64,6 @@ class Auth(QWidget):
         # Устанавливаем обработчик изменения размера окна
         self.resizeEvent = self.on_resize
 
-
     def fill_frame(self):
         # Читаем конфигурационный файл
         with open("config.txt", "r") as f:
@@ -73,10 +72,30 @@ class Auth(QWidget):
                 second_line = lines[1].strip()  # Вторая строка файла
                 if second_line.startswith("catalog="):
                     path = second_line.split("=")[1]
-                    if os.path.exists(path) and os.path.isfile(os.path.join(path, "users.db")):
-                        self.fill_frame_welcome()
-                        return
-        self.fill_frame_firstoffline()
+                    if os.path.exists(path):
+                        # Проверка наличия хотя бы одной записи в таблице users
+                        if self.check_users_table(path):
+                            self.fill_frame_welcome()
+                            return
+            self.fill_frame_firstoffline()
+
+    def check_users_table(self, path):
+        # Создаем соединение с базой данных
+        conn = sqlite3.connect(path)
+        cursor = conn.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                                id INTEGER PRIMARY KEY,
+                                full_name TEXT,
+                                login TEXT,
+                                password TEXT,
+                                passed INT
+                            )''')
+        # Проверяем наличие хотя бы одной записи в таблице users
+        cursor.execute("SELECT COUNT(*) FROM users")
+        row = cursor.fetchone()
+        conn.close()
+
+        return row[0] > 0
 
     def fill_frame_firstoffline(self, *args):
         # Здесь вы можете добавить необходимые элементы во фрейм
@@ -206,8 +225,8 @@ class Auth(QWidget):
             return
 
         # Подключаемся к базе данных
-        db_path = os.path.join(config_path, "users.db")
-        conn = sqlite3.connect(db_path)
+        #db_path = os.path.join(config_path, "users.db")
+        conn = sqlite3.connect(config_path)
         cursor = conn.cursor()
 
         # Поиск пользователя в базе данных
@@ -352,8 +371,8 @@ class Auth(QWidget):
                 return  # Вернуться, чтобы избежать дальнейшей обработки
 
         # Создание пути к базе данных из пути, прочитанного из файла config.txt
-        db_path = os.path.join(folder_path, "users.db")
-        conn = sqlite3.connect(db_path)
+        #db_path = os.path.join(folder_path, "users.db")
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
         cursor.execute('''SELECT * FROM users WHERE LOWER(login)=LOWER(?)''', (login,))
         if cursor.fetchone() is not None:
@@ -512,14 +531,15 @@ class Auth(QWidget):
 
         # Если все проверки пройдены успешно, выводим сообщение об успешном сохранении
         print("Все данные заполнены корректно.")
+        print("ASD",self.folder_path)
         with open("config.txt", "r") as file:
             lines = file.readlines()
         if len(lines) >= 2:
             # Замена второй строки
-            lines[1] = f"catalog={self.folder_path}\n"
+            lines[1] = f"catalog={self.folder_path}/data.db\n"
         else:
             # Если не хватает строк, добавляем новую строку
-            lines.append(f"catalog={self.folder_path}\n")
+            lines.append(f"catalog={self.folder_path}/data.db\n")
 
         # Запись изменений в файл
         with open("config.txt", "w") as file:
@@ -538,7 +558,7 @@ class Auth(QWidget):
         password = hashed_password.hexdigest()
 
         # Создание базы данных SQLite
-        db_path = os.path.join(self.folder_path, "users.db")
+        db_path = os.path.join(self.folder_path, "data.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 

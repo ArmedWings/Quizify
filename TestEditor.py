@@ -111,10 +111,10 @@ class TestEditor(QWidget):
             return
 
         # Создание пути к файлу базы данных
-        db_path = os.path.join(folder_path, "tests.db")
+        #db_path = os.path.join(folder_path, "tests.db")
 
         # Подключение к базе данных
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
 
         # Выборка данных из базы данных
@@ -193,7 +193,7 @@ class TestEditor(QWidget):
                 if widget:
                     widget.deleteLater()
             from QuestionEditor import QuestionEditor
-            question_page = QuestionEditor(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            question_page = QuestionEditor(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5", name=self.name)
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(question_page)
 
@@ -213,10 +213,10 @@ class TestEditor(QWidget):
             return
         print(folder_path)
         # Создание пути к файлу базы данных
-        db_path = os.path.join(folder_path, "tests.db")
+        #db_path = os.path.join(folder_path, "tests.db")
 
         # Подключение к базе данных
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
 
         # Создание таблицы, если она не существует
@@ -271,10 +271,10 @@ class TestEditor(QWidget):
             return False
 
         # Создание пути к файлу базы данных
-        db_path = os.path.join(folder_path, "tests.db")
+        #db_path = os.path.join(folder_path, "tests.db")
 
         # Подключение к базе данных
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
 
         # Получение данных из базы данных

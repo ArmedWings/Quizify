@@ -101,9 +101,9 @@ class ModerPage(QWidget):
             print("Файл конфигурации не найден")
             return
         print(folder_path)
-        db_path = os.path.join(folder_path, "users.db")
+        #db_path = os.path.join(folder_path, "users.db")
 
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
 
         # Запрос на получение данных о пользователях, кроме первого
@@ -176,10 +176,18 @@ class ModerPage(QWidget):
             print("Файл конфигурации не найден")
             return
         print(folder_path)
-        db_path = os.path.join(folder_path, "tests.db")
+        #db_path = os.path.join(folder_path, "tests.db")
 
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tests (
+                                    id INTEGER PRIMARY KEY,
+                                    name TEXT,
+                                    attempts INTEGER,
+                                    time TEXT,
+                                    amount INT,
+                                    visible TEXT
+                                )''')
 
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT name, amount FROM tests")
