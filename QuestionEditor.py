@@ -20,7 +20,7 @@ class QuestionEditor(QWidget):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
         # Главный лэйбл
-        self.label_editing = QLabel("Вопрос №1", self)
+        self.label_editing = QLabel("Вопрос №", self)
         self.label_editing.setAlignment(Qt.Alignment.AlignCenter)
         self.label_editing.setStyleSheet("font-size: 16pt;")
         self.main_layout.addWidget(self.label_editing)
@@ -54,6 +54,16 @@ class QuestionEditor(QWidget):
         self.main_layout.addWidget(self.plus_icon)
 
         self.create_buttons()
+        #Заполняем интерфейс если есть инфа
+        question_count, last_question_info = self.get_questions_info()
+        if question_count != 0:
+            self.label_editing.setText("Вопрос №"+str(question_count))
+            self.test_name_edit.setText(last_question_info[2])
+            self.answer_type_combo.setCurrentIndex(last_question_info[5])
+            self.update_answer_controls(last_question_info[5])
+            self.score_edit.setText(str(last_question_info[6]))
+            #дальше заполнить варианты, а ещё лучше - сделать всё в функции.
+
 
         self.answer_type_combo.currentIndexChanged.connect(self.update_answer_controls)
 
@@ -328,8 +338,9 @@ class QuestionEditor(QWidget):
         pass
     def next_button_handler(self):
         pass
-
     def save_button_handler(self):
+        self.save_info()
+    def save_info(self):
         print("SAVE")
         # Путь к файлу базы данных
         config_path = "config.txt"
@@ -447,6 +458,57 @@ class QuestionEditor(QWidget):
             conn.close()
         else:
             print("Тест с именем", test_name, "не найден.")
+
+    def get_questions_info(self):
+        # Путь к файлу базы данных
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+
+        # Создание соединения с базой данных
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+
+        # Получаем test_id по имени теста
+        cursor.execute("SELECT id FROM tests WHERE name=?", (self.name,))
+        test_id = cursor.fetchone()[0]
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS questions
+                                      (id INTEGER PRIMARY KEY,
+                                       test_id INTEGER,
+                                       question TEXT,
+                                       options TEXT,
+                                       answer TEXT,
+                                       type INTEGER,
+                                       score INTEGER,
+                                       FOREIGN KEY(test_id) REFERENCES tests(id))''')
+
+        # Получаем количество вопросов для указанного test_id
+        cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id = ?", (test_id,))
+        question_count = cursor.fetchone()[0]
+
+        # Если количество вопросов равно 0, возвращаем None
+        if question_count == 0:
+            print("Для теста", self.name, "нет вопросов.")
+            conn.close()
+            return 0, None
+
+        # Получаем информацию о последнем вопросе для указанного test_id
+        cursor.execute("SELECT * FROM questions WHERE test_id = ? ORDER BY id DESC LIMIT 1", (test_id,))
+        last_question_info = cursor.fetchone()
+
+        # Закрываем соединение с базой данных
+        conn.close()
+
+        return question_count, last_question_info
     def delete_button_handler(self):
         print("DELETE")
     def cancel_button_handler(self):
