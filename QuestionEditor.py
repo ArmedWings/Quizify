@@ -54,8 +54,9 @@ class QuestionEditor(QWidget):
         self.main_layout.addWidget(self.plus_icon)
 
         self.create_buttons()
-        #Заполняем интерфейс если есть инфа
-        self.process_last_question_info()
+        self.get_questions_count()
+        self.question_number = self.question_count
+        self.fill_page()
 
 
         self.answer_type_combo.currentIndexChanged.connect(self.update_answer_controls)
@@ -330,9 +331,19 @@ class QuestionEditor(QWidget):
         self.main_layout.addLayout(buttons_layout)
 
     def prev_button_handler(self):
-        pass
+        if self.question_number != 1:
+            self.question_number -= 1
+        else:
+            self.question_number = self.question_count
+        self.fill_page()
+
     def next_button_handler(self):
-        pass
+        if self.question_number <= self.question_count:
+            self.question_number += 1
+        if self.question_number <= self.question_count:
+            self.fill_page()
+        else:
+            self.unfill_page()
     def save_button_handler(self):
         self.save_info()
     def save_info(self):
@@ -454,19 +465,18 @@ class QuestionEditor(QWidget):
         else:
             print("Тест с именем", test_name, "не найден.")
 
-    def process_last_question_info(self):
-        question_count, last_question_info = self.get_questions_info()
-        self.question_number = 0
-        if question_count != 0:
-            print("Вопросов в тесте", question_count)
-            self.label_editing.setText("Вопрос №" + str(question_count))
+    def fill_page(self):
+        last_question_info = self.get_questions_info()
+        print("last_question_info", last_question_info)
+        if last_question_info is None:
+            return
+        if self.question_count != 0:
+            print("Вопросов в тесте", self.question_count)
+            self.label_editing.setText("Вопрос №" + str(self.question_number))
             self.test_name_edit.setText(last_question_info[2])
             self.answer_type_combo.setCurrentIndex(last_question_info[5])
             self.update_answer_controls(last_question_info[5])
             self.score_edit.setText(str(last_question_info[6]))
-
-            answer_type_index = self.answer_type_combo.currentIndex()
-            answer_elements = last_question_info[3].split(';')
 
             answer_type_index = self.answer_type_combo.currentIndex()
             options_elements = last_question_info[3].split(';')
@@ -489,7 +499,6 @@ class QuestionEditor(QWidget):
                     for j in range(line_edit_count):
                         if answer_type_index == 3:
                             date_widget = qhbox.itemAt(j).widget()
-                            print("№3")
                             if isinstance(date_widget, QtWidgets.QDateEdit):
                                 if options_elements:
                                     value = options_elements.pop(0)
@@ -503,13 +512,29 @@ class QuestionEditor(QWidget):
                                     line_edit.setText(value)
                                     print(value)
 
-                                    if answer_type_index == 1 or answer_type_index == 2:
+                                    if answer_type_index == 0 or answer_type_index == 1:
+                                        print("debug load", answers)
                                         for answer in answers:
                                             if answer == value:
-                                                checkbox = qhbox.itemAt(j).widget()
+                                                checkbox = qhbox.itemAt(0).widget()
                                                 if isinstance(checkbox, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
                                                     checkbox.setChecked(True)
                                                 break
+    def unfill_page(self):
+        print("Вопросов в тесте", self.question_count)
+        self.label_editing.setText("Вопрос №" + str(self.question_number))
+        self.test_name_edit.setText("")
+        self.answer_type_combo.setCurrentIndex(0)
+        self.score_edit.setText("01")
+        for i in range(3):
+            qhbox = self.question_layout.itemAt(i).layout()
+            if isinstance(qhbox, QtWidgets.QHBoxLayout):
+                line_edit_count = qhbox.count()
+                for j in range(line_edit_count):
+                    line_edit = qhbox.itemAt(j).widget()
+                    if isinstance(line_edit, QtWidgets.QLineEdit):
+                        line_edit.setText("")
+
     def get_questions_info(self):
         # Путь к файлу базы данных
         config_path = "config.txt"
@@ -550,20 +575,66 @@ class QuestionEditor(QWidget):
         if question_count == 0:
             print("Для теста", self.name, "нет вопросов.")
             conn.close()
-            return 0, None
+            return None
 
-        # Получаем информацию о последнем вопросе для указанного test_id
-        cursor.execute("SELECT * FROM questions WHERE test_id = ? ORDER BY id DESC LIMIT 1", (test_id,))
-        last_question_info = cursor.fetchone()
+        # Получаем информацию о вопросе с порядковым номером self.question_number для указанного test_id
+        cursor.execute("SELECT * FROM questions WHERE test_id = ? LIMIT 1 OFFSET ?",
+                       (test_id, self.question_number - 1))
+        question_info = cursor.fetchone()
 
         # Закрываем соединение с базой данных
         conn.close()
 
-        return question_count, last_question_info
+        return question_info
+    def get_questions_count(self):
+        # Путь к файлу базы данных
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+
+        # Создание соединения с базой данных
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+
+        # Получаем test_id по имени теста
+        cursor.execute("SELECT id FROM tests WHERE name=?", (self.name,))
+        test_id = cursor.fetchone()[0]
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS questions
+                                      (id INTEGER PRIMARY KEY,
+                                       test_id INTEGER,
+                                       question TEXT,
+                                       options TEXT,
+                                       answer TEXT,
+                                       type INTEGER,
+                                       score INTEGER,
+                                       FOREIGN KEY(test_id) REFERENCES tests(id))''')
+
+        # Получаем количество вопросов для указанного test_id
+        cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id = ?", (test_id,))
+        print("debug name = ", self.name, test_id)
+        self.question_count = cursor.fetchone()[0]
     def delete_button_handler(self):
         print("DELETE")
     def cancel_button_handler(self):
         print("CANCEL")
+        while self.main_window.main_layout.count():
+            item = self.main_window.main_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        from TestEditor import TestEditor
+        testeditor_page = TestEditor(main_window=self.main_window, name=self.name)
+        self.main_window.main_layout.removeWidget(self)
+        self.main_window.main_layout.addWidget(testeditor_page)
     def load_and_render_svg(self, filename, gradient_color1, gradient_color2):
         image = QImage(filename)
         if image.isNull():
