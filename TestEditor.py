@@ -408,6 +408,15 @@ class TestEditor(QWidget):
                 return
             conn = sqlite3.connect(folder_path)
             cursor = conn.cursor()
+            cursor.execute('''CREATE TABLE IF NOT EXISTS questions
+                                                  (id INTEGER PRIMARY KEY,
+                                                   test_id INTEGER,
+                                                   question TEXT,
+                                                   options TEXT,
+                                                   answer TEXT,
+                                                   type INTEGER,
+                                                   score INTEGER,
+                                                   FOREIGN KEY(test_id) REFERENCES tests(id))''')
 
             # Получаем test_id из таблицы tests по имени теста
             cursor.execute("SELECT id FROM tests WHERE name=?", (self.name,))
