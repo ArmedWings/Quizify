@@ -3,6 +3,8 @@
 import os
 import sqlite3  # Для работы с SQLite
 import sys
+
+from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit, QMessageBox
 from PySide6.QtCore import Qt, QTime
 
@@ -70,6 +72,12 @@ class TestEditor(QWidget):
         vertical_layout.addLayout(pickers_layout)
 
         # Кнопки
+        delete_button = QPushButton("Удалить тест", self)
+        delete_button.setStyleSheet(
+            "font-size: 12pt; border-radius: 25px; border-color: red")  # Применение стиля CSS для изменения размера шрифта
+        delete_button.setFixedSize(150, 50)  # Установка фиксированного размера кнопки
+        delete_button.clicked.connect(self.delete_confirm)
+
         buttons_layout = QHBoxLayout()
         cancel_button = QPushButton("Отмена", self)
         cancel_button.setFixedSize(150, 50)  # Установка фиксированного размера кнопки
@@ -92,9 +100,28 @@ class TestEditor(QWidget):
 
         # Устанавливаем горизонтальный компоновщик с кнопками внизу окна
         vertical_layout.addStretch(1)
+        vertical_layout.addWidget(delete_button, alignment=QtCore.Qt.Alignment.AlignCenter)
         vertical_layout.addLayout(buttons_layout)
         if self.name is not None:
             self.populate_fields_from_database()
+    def delete_confirm(self):
+        reply = QMessageBox.critical(None, 'Удаление',
+                                     'Вы действительно хотите безвозвратно удалить тест и его вопросы?',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.delete_test_and_questions()
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            from ModerPage import ModerPage
+            moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6",
+                                   gradient_color2="#29B2D5")
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(moder_page)
+
 
     def populate_fields_from_database(self):
         # Чтение пути к папке с базой данных из файла конфигурации
@@ -167,6 +194,18 @@ class TestEditor(QWidget):
 
     def edit_questions_clicked(self):
         print("Редактировать вопросы")
+        if self.test_name_edit.text() == "":
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Название теста"')
+            return
+        if self.attempts_edit.text() == "":
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Количество попыток"')
+            return
+        if self.time_edit.time() < QTime(0, 0, 3):
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Время на прохождение теста"')
+            return
         if self.check_for_changes():
             # Если есть изменения, спросить пользователя, хочет ли он сохранить их
             reply = QMessageBox.question(None, 'Сохранение',
@@ -182,7 +221,7 @@ class TestEditor(QWidget):
                     if widget:
                         widget.deleteLater()
                 from QuestionEditor import QuestionEditor
-                question_page = QuestionEditor(main_window=self.main_window)
+                question_page = QuestionEditor(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5", name=self.name)
                 self.main_window.main_layout.removeWidget(self)
                 self.main_window.main_layout.addWidget(question_page)
         else:
@@ -199,6 +238,18 @@ class TestEditor(QWidget):
 
     def save_clicked(self):
         print("Сохранить")
+        if self.test_name_edit.text() == "":
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Название теста"')
+            return
+        if self.attempts_edit.text() == "":
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Количество попыток"')
+            return
+        if self.time_edit.time() < QTime(0, 0, 3):
+            QMessageBox.warning(None, 'Сохранение',
+                                         'Заполните поле "Время на прохождение теста"')
+            return
         # Чтение пути к папке с базой данных из файла конфигурации
         config_path = "config.txt"
         folder_path = ""
@@ -230,10 +281,11 @@ class TestEditor(QWidget):
                             )''')
 
         # Получение данных из полей ввода
+        self.get_questions_count()
         name = self.test_name_edit.text()
         attempts = self.attempts_edit.text()
         time = self.time_edit.time().toString("HH:mm:ss")
-        amount = -1
+        amount = self.question_count
         visible = "False"  # Устанавливаем значение "False" для новой записи
 
         # Проверка, создавать новую запись или редактировать существующую
@@ -295,3 +347,87 @@ class TestEditor(QWidget):
             else:
                 # Данные не совпадают
                 return True
+    def get_questions_count(self):
+        # Путь к файлу базы данных
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+
+        # Создание соединения с базой данных
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+
+        # Получаем test_id по имени теста
+        cursor.execute("SELECT id FROM tests WHERE name=?", (self.name,))
+        test_id = cursor.fetchone()
+        if test_id is None:
+            print("Тест с именем '{}' не найден.".format(self.name))
+            self.question_count = 0
+            return
+        test_id = test_id[0]
+        cursor.execute('''CREATE TABLE IF NOT EXISTS questions
+                                      (id INTEGER PRIMARY KEY,
+                                       test_id INTEGER,
+                                       question TEXT,
+                                       options TEXT,
+                                       answer TEXT,
+                                       type INTEGER,
+                                       score INTEGER,
+                                       FOREIGN KEY(test_id) REFERENCES tests(id))''')
+
+        # Получаем количество вопросов для указанного test_id
+        cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id = ?", (test_id,))
+        print("debug name = ", self.name, test_id)
+        question_count = cursor.fetchone()
+        if question_count is None:
+            self.question_count = 0
+        else:
+            self.question_count = question_count[0]
+
+
+    def delete_test_and_questions(self):
+        try:
+            config_path = "config.txt"
+            folder_path = ""
+            try:
+                with open(config_path, "r") as config_file:
+                    for line in config_file:
+                        if line.startswith("catalog="):
+                            folder_path = line.split("catalog=")[1].strip()
+                            break
+            except FileNotFoundError:
+                print("Файл конфигурации не найден")
+                return
+            conn = sqlite3.connect(folder_path)
+            cursor = conn.cursor()
+
+            # Получаем test_id из таблицы tests по имени теста
+            cursor.execute("SELECT id FROM tests WHERE name=?", (self.name,))
+            test_id = cursor.fetchone()
+
+            if test_id:
+                # Удаляем все вопросы, связанные с данным test_id
+                cursor.execute("DELETE FROM questions WHERE test_id=?", (test_id[0],))
+
+                # Удаляем запись теста из таблицы tests
+                cursor.execute("DELETE FROM tests WHERE id=?", (test_id[0],))
+
+                # Применяем изменения
+                conn.commit()
+                print("Тест '{}' и все его вопросы успешно удалены.".format(self.name))
+            else:
+                print("Тест с именем '{}' не найден.".format(self.name))
+            conn.close()
+
+        except sqlite3.Error as e:
+            print("Ошибка SQLite:", e)
+
+

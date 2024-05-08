@@ -20,7 +20,7 @@ class QuestionEditor(QWidget):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
         # Главный лэйбл
-        self.label_editing = QLabel("Вопрос №", self)
+        self.label_editing = QLabel("Вопрос №1", self)
         self.label_editing.setAlignment(Qt.Alignment.AlignCenter)
         self.label_editing.setStyleSheet("font-size: 16pt;")
         self.main_layout.addWidget(self.label_editing)
@@ -333,6 +333,8 @@ class QuestionEditor(QWidget):
         self.main_layout.addLayout(buttons_layout)
 
     def prev_button_handler(self):
+        if not self.check_filled():
+            return
         self.save_info()
         if self.question_number != 1:
             self.question_number -= 1
@@ -341,6 +343,8 @@ class QuestionEditor(QWidget):
         self.fill_page()
 
     def next_button_handler(self):
+        if not self.check_filled():
+            return
         self.save_info()
         if self.question_number <= self.question_count:
             self.question_number += 1
@@ -349,6 +353,8 @@ class QuestionEditor(QWidget):
         else:
             self.unfill_page()
     def save_button_handler(self):
+        if not self.check_filled():
+            return
         self.save_info()
         while self.main_window.main_layout.count():
             item = self.main_window.main_layout.takeAt(0)
@@ -478,11 +484,15 @@ class QuestionEditor(QWidget):
                 cursor.execute(
                     "UPDATE questions SET question=?, options=?, answer=?, type=?, score=? WHERE test_id=? AND rowid = (SELECT rowid FROM questions WHERE test_id=? LIMIT 1 OFFSET ?)",
                     (question, options_str, answer, answer_type, score, test_id, test_id, self.question_number - 1))
-
+            conn.commit()
+            #Получаем кол-во вопросов
+            cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id = ?", (test_id,))
+            self.question_count = cursor.fetchone()[0]
             # Применение изменений и закрытие соединения с базой данных
+            cursor.execute("UPDATE tests SET amount = ? WHERE name = ?", (self.question_count, self.name))
             conn.commit()
             conn.close()
-            self.get_questions_count()
+            #self.get_questions_count()
         else:
             print("Тест с именем", test_name, "не найден.")
 
@@ -491,6 +501,7 @@ class QuestionEditor(QWidget):
         print("last_question_info", last_question_info)
         if last_question_info is None:
             return
+
         if self.question_count != 0:
             print("Вопросов в тесте", self.question_count)
             self.label_editing.setText("Вопрос №" + str(self.question_number))
@@ -501,7 +512,11 @@ class QuestionEditor(QWidget):
 
             answer_type_index = self.answer_type_combo.currentIndex()
             options_elements = last_question_info[3].split(';')
-            answers = last_question_info[4].split(';')
+            if last_question_info[4] is None:
+                answers = ''
+            else:
+                answers = last_question_info[4].split(';')
+
 
             if answer_type_index == 2 or answer_type_index == 3:
                 iterations = len(options_elements) + 1
@@ -547,7 +562,7 @@ class QuestionEditor(QWidget):
         self.test_name_edit.setText("")
         self.answer_type_combo.setCurrentIndex(0)
         self.score_edit.setText("01")
-        for i in range(3):
+        for i in range(self.question_layout.count()):
             qhbox = self.question_layout.itemAt(i).layout()
             if isinstance(qhbox, QtWidgets.QHBoxLayout):
                 line_edit_count = qhbox.count()
@@ -555,6 +570,50 @@ class QuestionEditor(QWidget):
                     line_edit = qhbox.itemAt(j).widget()
                     if isinstance(line_edit, QtWidgets.QLineEdit):
                         line_edit.setText("")
+                if self.answer_type_combo.currentIndex() == 0 or self.answer_type_combo.currentIndex() == 1:
+                    checkbox = qhbox.itemAt(0).widget()
+                    if isinstance(checkbox, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+                        checkbox.checked = False
+
+    def check_filled(self):
+
+
+        all_fields_filled = True
+        radio_button_checked = False
+        if self.test_name_edit.text() == "":
+            QMessageBox.warning(None, 'Ошибка сохранения',
+                                'Заполните поле: "Введите вопрос"')
+            return False
+        if self.score_edit.text() == "":
+            QMessageBox.warning(None, 'Ошибка сохранения',
+                                'Заполните поле: "Баллов за ответ"')
+            return False
+
+        for i in range(self.question_layout.count()):
+            qhbox = self.question_layout.itemAt(i).layout()
+            if isinstance(qhbox, QtWidgets.QHBoxLayout):
+                line_edit_count = qhbox.count()
+                for j in range(line_edit_count):
+                    line_edit = qhbox.itemAt(j).widget()
+                    if isinstance(line_edit, QtWidgets.QLineEdit):
+                        if line_edit.text().strip() == "":
+                            all_fields_filled = False
+                if self.answer_type_combo.currentIndex() == 0:
+                    checkbox = qhbox.itemAt(0).widget()
+                    if isinstance(checkbox, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+                        if checkbox.isChecked():
+                            radio_button_checked = True
+
+        # Если тип ответа 0 и ни одна радиокнопка не выбрана, вернуть False
+        if not all_fields_filled:
+            QMessageBox.warning(None, 'Ошибка сохранения',
+                                'Заполните все варианты или удалите лишние')
+            return False
+        if (self.answer_type_combo.currentIndex() == 0) and not radio_button_checked:
+            QMessageBox.warning(None, 'Ошибка сохранения',
+                                'Выберите хотя бы один правильный ответ')
+            return False
+        return True
 
     def get_questions_info(self):
         # Путь к файлу базы данных
@@ -671,11 +730,14 @@ class QuestionEditor(QWidget):
             cursor.execute(
                 "DELETE FROM questions WHERE rowid = (SELECT rowid FROM questions WHERE test_id=? LIMIT 1 OFFSET ?)",
                 (test_id, self.question_number - 1))
-
+            conn.commit()
+            # Обновляем количество как в приложении, так и в базе тестов
+            cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id = ?", (test_id,))
+            self.question_count = cursor.fetchone()[0]
             # Применение изменений и закрытие соединения с базой данных
+            cursor.execute("UPDATE tests SET amount = ? WHERE name = ?", (self.question_count, self.name))
             conn.commit()
             conn.close()
-            self.get_questions_count()
         else:
             print("Тест с именем", test_name, "не найден.")
         if self.question_number != 1:
