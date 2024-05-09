@@ -2,7 +2,8 @@ import sqlite3
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import QBrush, QLinearGradient, QPainter, QImage, QPixmap
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit, QMessageBox, QComboBox, QRadioButton, QCheckBox, QDateEdit
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, \
+    QTimeEdit, QMessageBox, QComboBox, QRadioButton, QCheckBox, QDateEdit, QScrollArea, QSizePolicy, QSpacerItem
 from PySide6.QtCore import Qt, QTime, QDate, QSize
 
 
@@ -33,16 +34,27 @@ class QuestionEditor(QWidget):
         self.main_layout.addWidget(self.test_name_edit)
 
         # Вертикальный компоновщик для настроек ответа
-        self.answer_settings_layout = QVBoxLayout()
-        self.main_layout.addLayout(self.answer_settings_layout)
+
+
 
         # Вертикальный компоновщик для вопросов
         self.question_widget = QWidget()
         self.question_layout = QVBoxLayout(self.question_widget)
-        self.main_layout.addWidget(self.question_widget)
 
         self.create_question_controls()
 
+
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # Делаем содержимое листающимся
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
+        scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Устанавливаем виджет с вопросами в QScrollArea
+        scroll_area.setWidget(self.question_widget)
+
+        # Добавляем QScrollArea в основной лейаут вашего окна
+        self.main_layout.addWidget(scroll_area)
         # ИКОНКА
         self.plus_icon = QLabel(self)
         plus_icon_path = "icons/plus.svg"  # Путь к файлу SVG
@@ -52,6 +64,9 @@ class QuestionEditor(QWidget):
         self.plus_icon.mousePressEvent = self.plus_icon_clicked
         self.plus_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(self.plus_icon)
+
+
+
 
         self.create_buttons()
         self.get_questions_count()
@@ -64,7 +79,6 @@ class QuestionEditor(QWidget):
         self.answer_type_combo.currentIndexChanged.connect(self.update_answer_controls)
 
     def create_question_controls(self):
-        # Лэйблы типа ответа и баллов за верный ответ, их настройки
         labels_layout = QHBoxLayout()
         self.label_answer_type = QLabel("Тип ответа:", self)
         self.label_answer_type.setStyleSheet("font-size: 12pt;")
@@ -73,7 +87,7 @@ class QuestionEditor(QWidget):
         labels_layout.addWidget(self.label_answer_type)
         labels_layout.addStretch(1)
         labels_layout.addWidget(self.label_score)
-        self.answer_settings_layout.addLayout(labels_layout)
+        self.main_layout.addLayout(labels_layout)
 
         # Компоновщики выпадающего списка и поля ввода для баллов за верный ответ
         input_layout = QHBoxLayout()
@@ -86,7 +100,7 @@ class QuestionEditor(QWidget):
         input_layout.addWidget(self.answer_type_combo)
         input_layout.addStretch()
         input_layout.addWidget(self.score_edit)
-        self.answer_settings_layout.addLayout(input_layout)
+        self.main_layout.addLayout(input_layout)
         self.create_choice_controls()
 
     def update_answer_controls(self, index):
@@ -131,21 +145,29 @@ class QuestionEditor(QWidget):
         choice1_layout = QHBoxLayout()
         choice_radio1 = QRadioButton(self)
         choice_edit1 = QLineEdit(self)
+
         choice1_layout.addWidget(choice_radio1)
         choice1_layout.addWidget(choice_edit1)
 
         choice2_layout = QHBoxLayout()
         choice_radio2 = QRadioButton(self)
         choice_edit2 = QLineEdit(self)
+
+        self.apply_custom_style(choice_edit1)
+        self.apply_custom_style(choice_edit2)
+
         choice2_layout.addWidget(choice_radio2)
         choice2_layout.addWidget(choice_edit2)
 
         self.question_layout.addLayout(choice1_layout)
         self.question_layout.addLayout(choice2_layout)
+        self.question_layout.addStretch()
 
     def plus_icon_clicked(self, event):
-        # Проверяем, что количество элементов в self.question_layout не превышает 5
-        if self.question_layout.count() <= 5:
+        if self.question_layout.itemAt(self.question_layout.count() - 1) and self.question_layout.itemAt(self.question_layout.count() - 1).spacerItem():
+            # Удаляем последний stretch элемент
+            self.question_layout.takeAt(self.question_layout.count() - 1)
+        if self.question_layout.count() <= 99:
             index = self.answer_type_combo.currentIndex()
             if index == 0:
                 # Создаем горизонтальный компоновщик для радиокнопки и поля ввода
@@ -154,6 +176,7 @@ class QuestionEditor(QWidget):
                 # Создаем радиокнопку и поле ввода
                 new_radio_button = QRadioButton(self)
                 new_line_edit = QLineEdit(self)
+                self.apply_custom_style(new_line_edit)
 
                 # Создаем метку для удаления строки
                 delete_label = QLabel("❌", self)
@@ -176,6 +199,7 @@ class QuestionEditor(QWidget):
                 # Создаем чекбокс и поле ввода
                 new_checkbox = QCheckBox(self)
                 new_line_edit = QLineEdit(self)
+                self.apply_custom_style(new_line_edit)
 
                 # Создаем метку для удаления строки
                 delete_label = QLabel("❌", self)
@@ -197,6 +221,7 @@ class QuestionEditor(QWidget):
 
                 # Создаем поле ввода
                 new_line_edit = QLineEdit(self)
+                self.apply_custom_style(new_line_edit)
 
                 # Создаем метку для удаления строки
                 delete_label = QLabel("❌", self)
@@ -237,6 +262,7 @@ class QuestionEditor(QWidget):
                 self.question_layout.addLayout(new_layout)
         else:
             QMessageBox.warning(None, "Внимание", "Невозможно добавить больше вариантов!")
+        self.question_layout.addStretch()
 
     def delete_row(self, layout):
         # Перебираем все элементы в компоновщике
@@ -265,10 +291,12 @@ class QuestionEditor(QWidget):
             checkbox_layout = QHBoxLayout()
             checkbox = QCheckBox(self)
             checkbox_edit = QLineEdit(self)
+            self.apply_custom_style(checkbox_edit)
             checkbox_layout.addWidget(checkbox)
             checkbox_layout.addWidget(checkbox_edit)
             self.question_layout.addLayout(checkbox_layout)
             choice_checkboxes.append(checkbox)
+        self.question_layout.addStretch()
 
     def create_text_answer_controls(self):
         self.clear_question_controls()
@@ -276,9 +304,11 @@ class QuestionEditor(QWidget):
         text_label = QLabel("Правильный ответ:", self)
         text_label.setStyleSheet("font-size: 12pt;")
         text_edit = QLineEdit(self)
+        self.apply_custom_style(text_edit)
         text_layout.addWidget(text_edit)
         self.question_layout.addWidget(text_label)
         self.question_layout.addLayout(text_layout)
+        self.question_layout.addStretch()
 
     def create_date_controls(self):
         self.clear_question_controls()
@@ -291,9 +321,11 @@ class QuestionEditor(QWidget):
         date_edit.setDate(QDate.currentDate())
         date_edit.setDisplayFormat("dd.MM.yyyy")
         date_edit.setFixedSize(150, 30)
+        date_edit.setStyleSheet("background: #2C2C2C; color: white")
         date_layout.addWidget(date_edit)
         date_layout.addStretch()
         self.question_layout.addLayout(date_layout)
+        self.question_layout.addStretch()
 
 
     def create_buttons(self):
@@ -312,7 +344,7 @@ class QuestionEditor(QWidget):
 
         buttons_layout = QHBoxLayout()
         cancel_button = QPushButton("Отмена", self)
-        cancel_button.setFixedSize(150, 50)
+        cancel_button.setFixedSize(200, 50)
         cancel_button.setStyleSheet("font-size: 12pt; border-radius: 25px")
         cancel_button.clicked.connect(self.cancel_button_handler)
         delete_button = QPushButton("Удалить вопрос", self)
@@ -328,7 +360,10 @@ class QuestionEditor(QWidget):
         buttons_layout.addWidget(delete_button)
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(save_button)
-        self.main_layout.addStretch()
+
+        spacer_item = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        #self.main_layout.addItem(spacer_item)
+        #self.main_layout.addStretch()
         self.main_layout.addLayout(buttons_layout1)
         self.main_layout.addLayout(buttons_layout)
 
@@ -778,3 +813,18 @@ class QuestionEditor(QWidget):
         painter.end()
 
         return pixmap
+
+    def apply_custom_style(self, widget):
+        widget.setStyleSheet(
+                    '''
+                QLineEdit {
+                        background-color: #2C2C2C; /* темно-серый цвет поля ввода */
+                        border: 1px solid #7E7E7E; /* цвет рамки */
+                        color: white; /* белый цвет текста */
+                        selection-background-color: #0078D7; /* цвет выделенного текста */
+                        font-size: 20px;
+                    }
+                    QLineEdit:focus {
+                        border: 2px solid #0078D7; /* цвет рамки при фокусе */
+                    }
+                ''')

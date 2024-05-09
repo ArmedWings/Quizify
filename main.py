@@ -278,6 +278,14 @@ class MainWindow(QMainWindow):
                     QScrollBar::sub-page:vertical {
                         background: #1C1B1B; /* Цвет фона перед ползунком */
                     }
+                    QTimeEdit {
+                        background-color: #2C2C2C; /* темно-серый цвет поля ввода */
+                        border: 1px solid #7E7E7E; /* цвет рамки */
+                        color: white; /* белый цвет текста */
+                        selection-background-color: #0078D7; /* цвет выделенного текста */
+                        font-size: 16px;
+                        padding: 5px;
+                    }
                 """)
 
         # Изменяем на горизонтальный компоновщик

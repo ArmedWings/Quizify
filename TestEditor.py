@@ -118,7 +118,7 @@ class TestEditor(QWidget):
                     widget.deleteLater()
             from ModerPage import ModerPage
             moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6",
-                                   gradient_color2="#29B2D5")
+                                   gradient_color2="#29B2D5", id=1)
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(moder_page)
 
@@ -177,7 +177,7 @@ class TestEditor(QWidget):
                         widget.deleteLater()
                 from ModerPage import ModerPage
                 moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6",
-                                       gradient_color2="#29B2D5")
+                                       gradient_color2="#29B2D5", id=1)
                 self.main_window.main_layout.removeWidget(self)
                 self.main_window.main_layout.addWidget(moder_page)
         else:
@@ -188,7 +188,7 @@ class TestEditor(QWidget):
                 if widget:
                     widget.deleteLater()
             from ModerPage import ModerPage
-            moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+            moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5", id=1)
             self.main_window.main_layout.removeWidget(self)
             self.main_window.main_layout.addWidget(moder_page)
 
@@ -338,7 +338,7 @@ class TestEditor(QWidget):
         # Проверка совпадения данных
         if result is None:
             # Запись не найдена в базе данных
-            return False
+            return True
         else:
             # Сравнение данных из базы данных с данными из полей ввода
             if name == result[1] and attempts == str(result[2]) and time == result[3]:

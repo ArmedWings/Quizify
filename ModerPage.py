@@ -5,12 +5,17 @@ from PySide6.QtCore import QSize, Qt
 import os
 import sqlite3
 class ModerPage(QWidget):
-    def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None):
+    def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None, id=None):
         super().__init__()
         self.main_window = main_window
         self.gradient_color1 = gradient_color1
         self.gradient_color2 = gradient_color2
+        self.id = id
         self.setup_ui()
+        if self.id == 1:
+            self.setup_moder()
+        else:
+            self.setup_user()
 
     def setup_ui(self):
         main_layout = QHBoxLayout(self)
@@ -20,12 +25,7 @@ class ModerPage(QWidget):
         self.frame1 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
         self.frame2 = GradientBorderFrame(self.gradient_color1, self.gradient_color2)
 
-        self.plus_icon = QLabel(self)
-        plus_icon_path = "icons/plus.svg"  # Путь к файлу SVG
-        plus_icon_pixmap = self.load_and_render_svg(plus_icon_path, self.gradient_color1, self.gradient_color2)
-        plus_icon_pixmap = plus_icon_pixmap.scaled(QSize(80, 80), Qt.KeepAspectRatio)
-        self.plus_icon.setPixmap(plus_icon_pixmap)
-        self.plus_icon.mousePressEvent = self.plus_icon_clicked
+
 
         # Создаем вертикальный макет для второго фрейма и добавляем отступ
         layout_frame2 = QVBoxLayout()
@@ -50,20 +50,124 @@ class ModerPage(QWidget):
         self.logout_icon.mousePressEvent = self.logout_icon_clicked
 
         logout_size = logout_icon_pixmap.size()
-        plus_size = plus_icon_pixmap.size()
+
         self.logout_icon.setFixedSize(logout_size)
-        self.plus_icon.setFixedSize(plus_size)
+
 
         self.frame1_layout = QVBoxLayout()
         self.frame1.setLayout(self.frame1_layout)
         self.frame2_layout = QVBoxLayout()
         self.frame2.setLayout(self.frame2_layout)
 
-        self.adjust_label_position()
-        self.resizeEvent = self.on_resize
+
+
+    def setup_moder(self):
+        self.plus_icon = QLabel(self)
+        plus_icon_path = "icons/plus.svg"  # Путь к файлу SVG
+        plus_icon_pixmap = self.load_and_render_svg(plus_icon_path, self.gradient_color1, self.gradient_color2)
+        plus_icon_pixmap = plus_icon_pixmap.scaled(QSize(80, 80), Qt.KeepAspectRatio)
+        self.plus_icon.setPixmap(plus_icon_pixmap)
+        self.plus_icon.mousePressEvent = self.plus_icon_clicked
+        plus_size = plus_icon_pixmap.size()
+        self.plus_icon.setFixedSize(plus_size)
+
         self.fill_frame1_users()
         self.fill_frame2_tests()
 
+        self.resizeEvent = self.on_resize
+        self.adjust_label_position()
+
+    def setup_user(self):
+        self.fill_frame1_allowed_tests()
+        #self.fill_frame2_tests()
+
+        self.resizeEvent = self.on_resize
+        self.adjust_label_position()
+
+    def fill_frame1_allowed_tests(self):
+        # Очистка всего содержимого frame1_layout
+        while self.frame1_layout.count():
+            item = self.frame1_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.frame1_layout.addSpacing(10)
+        label_users = QLabel("Доступные тестирования", self.frame1)
+        label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_users.setStyleSheet("font-size: 16pt;")
+        self.frame1_layout.addWidget(label_users)
+        self.frame1_layout.addSpacing(10)
+
+        h_layout = QHBoxLayout()
+        label_user = QLabel("Название", self.frame1)
+        label_user.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_user)
+        h_layout.addStretch()
+        label_passed_tests = QLabel("Вопросов", self.frame1)
+        label_passed_tests.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_passed_tests)
+        self.frame1_layout.addLayout(h_layout)
+
+        config_path = "config.txt"
+        folder_path = ""
+        try:
+            with open(config_path, "r") as config_file:
+                for line in config_file:
+                    if line.startswith("catalog="):
+                        folder_path = line.split("catalog=")[1].strip()
+                        break
+        except FileNotFoundError:
+            print("Файл конфигурации не найден")
+            return
+        print(folder_path)
+        # db_path = os.path.join(folder_path, "tests.db")
+
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tests (
+                                            id INTEGER PRIMARY KEY,
+                                            name TEXT,
+                                            attempts INTEGER,
+                                            time TEXT,
+                                            amount INT,
+                                            visible TEXT
+                                        )''')
+
+        # Запрос на получение данных о пользователях, кроме первого
+        cursor.execute("SELECT name, amount FROM tests")
+        tests = cursor.fetchall()
+
+        # Создаем экземпляр QScrollArea
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+
+        scroll_widget = QWidget()
+        scroll_widget_layout = QVBoxLayout(scroll_widget)
+        # scroll_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Создание кнопок для каждого пользователя
+        for test in tests:
+            test_button = DualTextButton(test[0], str(test[1]), self)
+            test_button.setStyleSheet("font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")
+            test_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
+            test_button.enterEvent = lambda event, button=test_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #111111; border: 1px solid #7E7E7E;")  # Устанавливаем стиль для наведения мыши
+            test_button.leaveEvent = lambda event, button=test_button: button.setStyleSheet(
+                "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
+            test_button.clicked.connect(self.to_testpassing)  # Соединяем сигнал clicked с обработчиком
+            scroll_widget_layout.addWidget(test_button)
+        scroll_widget_layout.addStretch()
+        # Устанавливаем виджет в QScrollArea
+        scroll_area.setWidget(scroll_widget)
+        # scroll_area.setStyleSheet("background: black;")
+
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
+        conn.close()
+
+        # Добавляем QScrollArea в ваш текущий макет
+        self.frame1_layout.addWidget(scroll_area)
+        # self.frame2_layout.addStretch()
     def fill_frame1_users(self):
         # Очистка всего содержимого frame1_layout
         while self.frame1_layout.count():
@@ -189,6 +293,8 @@ class ModerPage(QWidget):
                                     visible TEXT
                                 )''')
 
+
+
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT name, amount FROM tests")
         tests = cursor.fetchall()
@@ -225,6 +331,25 @@ class ModerPage(QWidget):
         self.frame2_layout.addWidget(scroll_area)
         #self.frame2_layout.addStretch()
 
+    def to_testpassing(self):
+        sender_button = self.sender()  # Получаем отправителя сигнала
+        if isinstance(sender_button, DualTextButton):  # Проверяем, является ли отправитель кнопкой DualTextButton
+            left_text = sender_button.left_label.text()  # Получаем текст слева от кнопки
+            reply = QMessageBox.question(None, 'Начать тест?',
+                                         'Вы уверены, что хотите начать тест? Это действие отменить нельзя',
+                                         QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                while self.main_window.main_layout.count():
+                    item = self.main_window.main_layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                from TestPassing import TestPassing
+                testpassing_page = TestPassing(main_window=self.main_window, gradient_color1=self.gradient_color1, gradient_color2=self.gradient_color2, name=left_text, user_id=self.id)
+                self.main_window.main_layout.removeWidget(self)
+                self.main_window.main_layout.addWidget(testpassing_page)
     def show_selected_test(self):
         sender_button = self.sender()  # Получаем отправителя сигнала
         if isinstance(sender_button, DualTextButton):  # Проверяем, является ли отправитель кнопкой DualTextButton
@@ -299,10 +424,11 @@ class ModerPage(QWidget):
     def on_resize(self, event):
         self.adjust_label_position()
     def adjust_label_position(self):
-        x = (self.width() - self.width()//4 - self.plus_icon.width()//2)
         x_right = (self.width() - self.logout_icon.width())
         self.logout_icon.move(x_right, 50 - self.logout_icon.height()//2)
-        self.plus_icon.move(x, 50 - self.plus_icon.height()//2)
+        if hasattr(self, 'plus_icon') and self.plus_icon is not None:
+            x = (self.width() - self.width() // 4 - self.plus_icon.width() // 2)
+            self.plus_icon.move(x, 50 - self.plus_icon.height() // 2)
 
 
 class DualTextButton(QPushButton):

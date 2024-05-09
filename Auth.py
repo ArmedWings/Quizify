@@ -259,7 +259,7 @@ class Auth(QWidget):
             msg_box.exec_()
         else:
             print("Вход выполнен успешно")
-            self.clear_layout_moder()
+            self.clear_layout_moder(user_data[0])
 
 
             # Дополнительные действия при успешном входе, например, переход на другую страницу или отображение основного окна приложения
@@ -571,6 +571,18 @@ class Auth(QWidget):
                                     passed INT
                                 )''')
 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS passes (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                test_name TEXT,
+                questions_amount INTEGER,
+                score INTEGER,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(test_name) REFERENCES tests(name)
+            )
+        ''')
+
         data_tuple = (full_name, login, password, passed)
         cursor.execute('''INSERT INTO users (full_name, login, password, passed) VALUES (?, ?, ?, ?)''', data_tuple)
 
@@ -675,7 +687,7 @@ class Auth(QWidget):
         # Вызываем метод setup_interface из MainWindow
         self.ismainfocus = True
         self.main_window.setup_interface()
-    def clear_layout_moder(self, *args):
+    def clear_layout_moder(self, id, *args):
         # Удаляем все дочерние элементы из макета главного окна
         while self.main_window.main_layout.count():
             item = self.main_window.main_layout.takeAt(0)
@@ -683,7 +695,7 @@ class Auth(QWidget):
             if widget:
                 widget.deleteLater()
         from ModerPage import ModerPage
-        moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5")
+        moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5", id=id)
         self.main_window.main_layout.removeWidget(self)
         self.main_window.main_layout.addWidget(moder_page)
         # Вызываем метод setup_interface из MainWindow
