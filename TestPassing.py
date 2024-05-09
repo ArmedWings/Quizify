@@ -7,6 +7,8 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, Q
     QTimeEdit, QMessageBox, QComboBox, QRadioButton, QCheckBox, QDateEdit, QScrollArea, QSizePolicy, QPlainTextEdit
 from PySide6.QtCore import Qt, QTime, QDate, QSize
 
+import Funcs
+
 
 class TestPassing(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None, name=None, user_id=None):
@@ -59,27 +61,17 @@ class TestPassing(QWidget):
         # Добавляем QScrollArea в основной лейаут вашего окна
         self.main_layout.addWidget(scroll_area)
 
-
-        #self.create_question_controls()
-
-        # ИКОНКА
-        #self.plus_icon = QLabel(self)
-        #plus_icon_path = "icons/plus.svg"  # Путь к файлу SVG
-        #plus_icon_pixmap = self.load_and_render_svg(plus_icon_path, self.gradient_color1, self.gradient_color2)
-        #plus_icon_pixmap = plus_icon_pixmap.scaled(QSize(70, 70), Qt.KeepAspectRatio)
-        #self.plus_icon.setPixmap(plus_icon_pixmap)
-        #self.plus_icon.mousePressEvent = self.plus_icon_clicked
-        #self.plus_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        #self.main_layout.addWidget(self.plus_icon)
-
-        #self.create_buttons()
-        #self.get_questions_count()
+        #Получение вопросника
         self.get_array()
+        #Запись предварительных (пустых) результатов в новую запись
+        self.db_preset()
+        #Подготовка вспомогательного массива
         self.page_init()
-        self.set_layout_preset()
 
+        #Объявление и подгрузка первой страницы
         self.question_number = 0
-        self.question_load(self.question_number)
+        self.question_load()
+        #UI
         self.create_buttons()
 
     def page_init(self):
@@ -93,7 +85,7 @@ class TestPassing(QWidget):
             self.questions_array[i] = (first, second, third, fourth_elements, fifth_elements, *rest)  # Обновляем элементы внутреннего списка
         #random.shuffle(self.questions_array)
 
-    def question_load(self, question_id):
+    def question_load(self):
         self.clear_question_controls()
         self.label_editing.setText("Вопрос №" + str(self.question_number + 1))
         self.label_question.setText(self.questions_array[self.question_number][2])
@@ -101,25 +93,23 @@ class TestPassing(QWidget):
             option_layout = QHBoxLayout()
             new_option = QLabel(option)
             new_option.setStyleSheet("font-size: 14pt")
+            if self.questions_array[self.question_number][5] == 0:
+                new_radio = QRadioButton()
+                option_layout.addWidget(new_radio)
+            elif self.questions_array[self.question_number][5] == 1:
+                new_check = QCheckBox()
+                option_layout.addWidget(new_check)
             option_layout.addWidget(new_option)
+            option_layout.addStretch()
             self.question_layout.addLayout(option_layout)
         self.question_layout.addStretch()
-    def set_layout_preset(self):
+    def db_preset(self):
+        folder_path = Funcs.get_path()
         pass
     def get_array(self):
         try:
             # Подключение к базе данных
-            config_path = "config.txt"
-            folder_path = ""
-            try:
-                with open(config_path, "r") as config_file:
-                    for line in config_file:
-                        if line.startswith("catalog="):
-                            folder_path = line.split("catalog=")[1].strip()
-                            break
-            except FileNotFoundError:
-                print("Файл конфигурации не найден")
-                return
+            folder_path = Funcs.get_path()
             conn = sqlite3.connect(folder_path)
             cursor = conn.cursor()
 
@@ -187,13 +177,13 @@ class TestPassing(QWidget):
             self.question_number -= 1
         else:
             self.question_number = len(self.questions_array)-1
-        self.question_load(self.question_number)
+        self.question_load()
     def next_button_handler(self):
         if self.question_number < len(self.questions_array)-1:
             self.question_number += 1
         else:
             self.question_number = 0
-        self.question_load(self.question_number)
+        self.question_load()
     def end_button_handler(self):
         pass
 

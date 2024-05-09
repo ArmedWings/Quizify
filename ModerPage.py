@@ -4,6 +4,7 @@ from PySide6.QtCore import QSize, Qt
 
 import os
 import sqlite3
+import Funcs
 class ModerPage(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None, id=None):
         super().__init__()
@@ -109,19 +110,7 @@ class ModerPage(QWidget):
         h_layout.addWidget(label_passed_tests)
         self.frame1_layout.addLayout(h_layout)
 
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
-        print(folder_path)
-        # db_path = os.path.join(folder_path, "tests.db")
+        folder_path = Funcs.get_path()
 
         conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
@@ -193,19 +182,7 @@ class ModerPage(QWidget):
         h_layout.addWidget(label_passed_tests)
         self.frame1_layout.addLayout(h_layout)
 
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
-        print(folder_path)
-        #db_path = os.path.join(folder_path, "users.db")
+        folder_path = Funcs.get_path()
 
         conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
@@ -268,19 +245,7 @@ class ModerPage(QWidget):
         h_layout.addWidget(label_passed_tests)
         self.frame2_layout.addLayout(h_layout)
 
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
-        print(folder_path)
-        #db_path = os.path.join(folder_path, "tests.db")
+        folder_path = Funcs.get_path()
 
         conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()

@@ -6,6 +6,8 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, Q
     QTimeEdit, QMessageBox, QComboBox, QRadioButton, QCheckBox, QDateEdit, QScrollArea, QSizePolicy, QSpacerItem
 from PySide6.QtCore import Qt, QTime, QDate, QSize
 
+import Funcs
+
 
 class QuestionEditor(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None, name=None):
@@ -403,17 +405,7 @@ class QuestionEditor(QWidget):
     def save_info(self):
         print("SAVE")
         # Путь к файлу базы данных
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         if self.answer_type_combo.currentIndex() != 3:  # Проверка индекса
             # Код для типа ответа "Текст"
@@ -652,17 +644,7 @@ class QuestionEditor(QWidget):
 
     def get_questions_info(self):
         # Путь к файлу базы данных
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         # Создание соединения с базой данных
         conn = sqlite3.connect(folder_path)
@@ -703,17 +685,7 @@ class QuestionEditor(QWidget):
         return question_info
     def get_questions_count(self):
         # Путь к файлу базы данных
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         # Создание соединения с базой данных
         conn = sqlite3.connect(folder_path)
@@ -739,17 +711,7 @@ class QuestionEditor(QWidget):
         self.question_count = cursor.fetchone()[0]
     def delete_button_handler(self):
         print("DELETE")
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         # Создание соединения с базой данных
         conn = sqlite3.connect(folder_path)

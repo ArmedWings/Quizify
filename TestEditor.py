@@ -8,6 +8,9 @@ from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTimeEdit, QMessageBox
 from PySide6.QtCore import Qt, QTime
 
+import Funcs
+
+
 class TestEditor(QWidget):
     def __init__(self, main_window=None, name=None):
         super().__init__()
@@ -125,17 +128,7 @@ class TestEditor(QWidget):
 
     def populate_fields_from_database(self):
         # Чтение пути к папке с базой данных из файла конфигурации
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         # Создание пути к файлу базы данных
         #db_path = os.path.join(folder_path, "tests.db")
@@ -251,18 +244,7 @@ class TestEditor(QWidget):
                                          'Заполните поле "Время на прохождение теста"')
             return
         # Чтение пути к папке с базой данных из файла конфигурации
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
-        print(folder_path)
+        folder_path = Funcs.get_path()
         # Создание пути к файлу базы данных
         #db_path = os.path.join(folder_path, "tests.db")
 
@@ -310,17 +292,7 @@ class TestEditor(QWidget):
         time = self.time_edit.time().toString("HH:mm:ss")
 
         # Чтение пути к папке с базой данных из файла конфигурации
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return False
+        folder_path = Funcs.get_path()
 
         # Создание пути к файлу базы данных
         #db_path = os.path.join(folder_path, "tests.db")
@@ -349,17 +321,7 @@ class TestEditor(QWidget):
                 return True
     def get_questions_count(self):
         # Путь к файлу базы данных
-        config_path = "config.txt"
-        folder_path = ""
-        try:
-            with open(config_path, "r") as config_file:
-                for line in config_file:
-                    if line.startswith("catalog="):
-                        folder_path = line.split("catalog=")[1].strip()
-                        break
-        except FileNotFoundError:
-            print("Файл конфигурации не найден")
-            return
+        folder_path = Funcs.get_path()
 
         # Создание соединения с базой данных
         conn = sqlite3.connect(folder_path)
@@ -395,17 +357,7 @@ class TestEditor(QWidget):
 
     def delete_test_and_questions(self):
         try:
-            config_path = "config.txt"
-            folder_path = ""
-            try:
-                with open(config_path, "r") as config_file:
-                    for line in config_file:
-                        if line.startswith("catalog="):
-                            folder_path = line.split("catalog=")[1].strip()
-                            break
-            except FileNotFoundError:
-                print("Файл конфигурации не найден")
-                return
+            folder_path = Funcs.get_path()
             conn = sqlite3.connect(folder_path)
             cursor = conn.cursor()
             cursor.execute('''CREATE TABLE IF NOT EXISTS questions

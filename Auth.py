@@ -7,6 +7,9 @@ import hashlib
 
 from functools import partial
 
+import Funcs
+
+
 class Auth(QWidget):
     def __init__(self, main_window=None, gradient_color1=None, gradient_color2=None):
         super().__init__()
@@ -212,21 +215,15 @@ class Auth(QWidget):
         login = self.line_edit_login.text()
 
 
-        # Получаем путь из файла config.txt
-        config_path = ""
-        with open("config.txt", "r") as f:
-            for line in f:
-                if line.startswith("catalog="):
-                    config_path = line.strip().split("=")[1]
-                    break
+        folder_path = Funcs.get_path()
 
-        if not config_path:
+        if not folder_path:
             QMessageBox.critical(self, "Ошибка", "Не удалось найти путь к базе данных")
             return
 
         # Подключаемся к базе данных
         #db_path = os.path.join(config_path, "users.db")
-        conn = sqlite3.connect(config_path)
+        conn = sqlite3.connect(folder_path)
         cursor = conn.cursor()
 
         # Поиск пользователя в базе данных
