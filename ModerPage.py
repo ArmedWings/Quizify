@@ -80,6 +80,7 @@ class ModerPage(QWidget):
 
     def setup_user(self):
         self.fill_frame1_allowed_tests()
+        self.fill_frame2_passed_tests()
         #self.fill_frame2_tests()
 
         self.resizeEvent = self.on_resize
@@ -126,6 +127,7 @@ class ModerPage(QWidget):
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT name, amount FROM tests")
         tests = cursor.fetchall()
+        tests = reversed(tests)
 
         # Создаем экземпляр QScrollArea
         scroll_area = QScrollArea(self)
@@ -145,6 +147,7 @@ class ModerPage(QWidget):
             test_button.leaveEvent = lambda event, button=test_button: button.setStyleSheet(
                 "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
             test_button.clicked.connect(self.to_testpassing)  # Соединяем сигнал clicked с обработчиком
+            test_button.setCursor(Qt.PointingHandCursor)
             scroll_widget_layout.addWidget(test_button)
         scroll_widget_layout.addStretch()
         # Устанавливаем виджет в QScrollArea
@@ -156,6 +159,71 @@ class ModerPage(QWidget):
 
         # Добавляем QScrollArea в ваш текущий макет
         self.frame1_layout.addWidget(scroll_area)
+    def fill_frame2_passed_tests(self):
+        # Очистка всего содержимого frame1_layout
+        while self.frame2_layout.count():
+            item = self.frame2_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.frame2_layout.addSpacing(10)
+        label_users = QLabel("Пройденные тестирования", self.frame1)
+        label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_users.setStyleSheet("font-size: 16pt;")
+        self.frame2_layout.addWidget(label_users)
+        self.frame2_layout.addSpacing(10)
+
+        h_layout = QHBoxLayout()
+        label_user = QLabel("Название", self.frame1)
+        label_user.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_user)
+        h_layout.addStretch()
+        label_passed_tests = QLabel("Баллов", self.frame1)
+        label_passed_tests.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_passed_tests)
+        self.frame2_layout.addLayout(h_layout)
+
+        folder_path = Funcs.get_path()
+
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+
+        # Запрос на получение данных о пользователях, кроме первого
+        cursor.execute("SELECT test_name, score FROM passes WHERE user_id = ?", (self.id,))
+        passes = cursor.fetchall()
+        passes = reversed(passes)
+
+        # Создаем экземпляр QScrollArea
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+
+        scroll_widget = QWidget()
+        scroll_widget_layout = QVBoxLayout(scroll_widget)
+        # scroll_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Создание кнопок для каждого пользователя
+        for attempt in passes:
+            attempt_button = DualTextButton(attempt[0], attempt[1], self)
+            Funcs.set_style_scaled(attempt_button, attempt[1])
+            attempt_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
+            attempt_button.enterEvent = lambda event, element=attempt_button, score=attempt[1]: Funcs.hovered_style_scaled(
+                element, score, event)
+            attempt_button.leaveEvent = lambda event, element=attempt_button, score=attempt[1]: Funcs.hovered_style_scaled(
+                element, score, event)
+            attempt_button.setCursor(Qt.PointingHandCursor)
+            #test_button.clicked.connect()  # Соединяем сигнал clicked с обработчиком
+            scroll_widget_layout.addWidget(attempt_button)
+        scroll_widget_layout.addStretch()
+        # Устанавливаем виджет в QScrollArea
+        scroll_area.setWidget(scroll_widget)
+        # scroll_area.setStyleSheet("background: black;")
+
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
+        conn.close()
+
+        # Добавляем QScrollArea в ваш текущий макет
+        self.frame2_layout.addWidget(scroll_area)
         # self.frame2_layout.addStretch()
     def fill_frame1_users(self):
         # Очистка всего содержимого frame1_layout
@@ -190,7 +258,7 @@ class ModerPage(QWidget):
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT full_name, passed FROM users LIMIT -1 OFFSET 1")
         users = cursor.fetchall()
-
+        users = reversed(users)
         # Создаем экземпляр QScrollArea
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)  # Позволяет автоматически изменять размеры области прокрутки
@@ -263,6 +331,7 @@ class ModerPage(QWidget):
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT name, amount FROM tests")
         tests = cursor.fetchall()
+        tests = reversed(tests)
 
         # Создаем экземпляр QScrollArea
         scroll_area = QScrollArea(self)

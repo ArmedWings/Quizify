@@ -129,33 +129,6 @@ class TestPassing(QWidget):
             conn = sqlite3.connect(folder_path)
             cursor = conn.cursor()
 
-            cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS passes (
-                            id INTEGER PRIMARY KEY,
-                            user_id INTEGER,
-                            test_name TEXT,
-                            questions_amount INTEGER,
-                            score TEXT,
-                            FOREIGN KEY(user_id) REFERENCES users(id)
-                        )
-                    ''')
-            cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS answers (
-                            id INTEGER PRIMARY KEY,
-                            user_id INTEGER,
-                            pass_id INTEGER,
-                            test_name TEXT,
-                            question TEXT,
-                            options TEXT,
-                            getanswer TEXT,
-                            rightanswer TEXT,
-                            type INTEGER,
-                            getscore INTEGER,
-                            maxscore INTEGER,
-                            FOREIGN KEY(user_id) REFERENCES users(id),
-                            FOREIGN KEY(pass_id) REFERENCES passes(id)
-                        )
-                    ''')
             #записываем предварительные данные
             cursor.execute('''
                 INSERT INTO passes (user_id, test_name, questions_amount) 
@@ -347,6 +320,7 @@ class TestPassing(QWidget):
             print("Ошибка SQLite:", e)
         finally:
             conn.close()
+            self.next_button_handler()
     def prev_button_handler(self):
         if self.question_number > 0:
             self.question_number -= 1

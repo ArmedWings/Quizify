@@ -569,16 +569,32 @@ class Auth(QWidget):
                                 )''')
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS passes (
-                id INTEGER PRIMARY KEY,
-                user_id INTEGER,
-                test_name TEXT,
-                questions_amount INTEGER,
-                score INTEGER,
-                FOREIGN KEY(user_id) REFERENCES users(id),
-                FOREIGN KEY(test_name) REFERENCES tests(name)
-            )
-        ''')
+                                CREATE TABLE IF NOT EXISTS passes (
+                                    id INTEGER PRIMARY KEY,
+                                    user_id INTEGER,
+                                    test_name TEXT,
+                                    questions_amount INTEGER,
+                                    score TEXT,
+                                    FOREIGN KEY(user_id) REFERENCES users(id)
+                                )
+                            ''')
+        cursor.execute('''
+                                CREATE TABLE IF NOT EXISTS answers (
+                                    id INTEGER PRIMARY KEY,
+                                    user_id INTEGER,
+                                    pass_id INTEGER,
+                                    test_name TEXT,
+                                    question TEXT,
+                                    options TEXT,
+                                    getanswer TEXT,
+                                    rightanswer TEXT,
+                                    type INTEGER,
+                                    getscore INTEGER,
+                                    maxscore INTEGER,
+                                    FOREIGN KEY(user_id) REFERENCES users(id),
+                                    FOREIGN KEY(pass_id) REFERENCES passes(id)
+                                )
+                            ''')
 
         data_tuple = (full_name, login, password, passed)
         cursor.execute('''INSERT INTO users (full_name, login, password, passed) VALUES (?, ?, ?, ?)''', data_tuple)
