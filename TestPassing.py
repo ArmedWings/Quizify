@@ -130,6 +130,12 @@ class TestPassing(QWidget):
             cursor = conn.cursor()
 
             #записываем предварительные данные
+            cursor.execute("SELECT COUNT(*) FROM passes WHERE user_id = ?", (self.user_id,))
+            count = cursor.fetchone()[0]
+
+            cursor.execute("UPDATE users SET passed = ? WHERE id = ?", (count+1, self.user_id))
+            conn.commit()
+
             cursor.execute('''
                 INSERT INTO passes (user_id, test_name, questions_amount) 
                 VALUES (?, ?, ?)

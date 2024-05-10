@@ -568,6 +568,14 @@ class Auth(QWidget):
                                     passed INT
                                 )''')
 
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tests (
+                                                    id INTEGER PRIMARY KEY,
+                                                    name TEXT,
+                                                    attempts INTEGER,
+                                                    time TEXT,
+                                                    amount INT
+                                                )''')
+
         cursor.execute('''
                                 CREATE TABLE IF NOT EXISTS passes (
                                     id INTEGER PRIMARY KEY,
@@ -595,6 +603,7 @@ class Auth(QWidget):
                                     FOREIGN KEY(pass_id) REFERENCES passes(id)
                                 )
                             ''')
+
 
         data_tuple = (full_name, login, password, passed)
         cursor.execute('''INSERT INTO users (full_name, login, password, passed) VALUES (?, ?, ?, ?)''', data_tuple)

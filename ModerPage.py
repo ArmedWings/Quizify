@@ -276,6 +276,7 @@ class ModerPage(QWidget):
                 "font-size: 14pt; background-color: #111111; border: 1px solid #7E7E7E;")  # Устанавливаем стиль для наведения мыши
             user_button.leaveEvent = lambda event, button=user_button: button.setStyleSheet(
                 "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
+            user_button.setCursor(Qt.PointingHandCursor)
             scroll_widget_layout.addWidget(user_button)
         scroll_widget_layout.addStretch()
 
@@ -351,6 +352,7 @@ class ModerPage(QWidget):
                 "font-size: 14pt; background-color: #111111; border: 1px solid #7E7E7E;")  # Устанавливаем стиль для наведения мыши
             test_button.leaveEvent = lambda event, button=test_button: button.setStyleSheet(
                 "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
+            test_button.setCursor(Qt.PointingHandCursor)
             test_button.clicked.connect(self.show_selected_test)  # Соединяем сигнал clicked с обработчиком
             scroll_widget_layout.addWidget(test_button)
         scroll_widget_layout.addStretch()
