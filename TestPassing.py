@@ -105,7 +105,56 @@ class TestPassing(QWidget):
         self.question_layout.addStretch()
     def db_preset(self):
         folder_path = Funcs.get_path()
-        pass
+        try:
+            conn = sqlite3.connect(folder_path)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS passes (
+                            id INTEGER PRIMARY KEY,
+                            user_id INTEGER,
+                            test_name TEXT,
+                            questions_amount INTEGER,
+                            score INTEGER,
+                            FOREIGN KEY(user_id) REFERENCES users(id)
+                        )
+                    ''')
+            cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS answers (
+                            id INTEGER PRIMARY KEY,
+                            user_id INTEGER,
+                            pass_id INTEGER,
+                            test_name TEXT,
+                            question TEXT,
+                            options TEXT,
+                            getanswer TEXT,
+                            rightanswer TEXT,
+                            type INTEGER,
+                            getscore INTEGER,
+                            maxscore INTEGER,
+                            FOREIGN KEY(user_id) REFERENCES users(id),
+                            FOREIGN KEY(pass_id) REFERENCES passes(id)
+                        )
+                    ''')
+            #записываем предварительные данные
+            cursor.execute('''
+                INSERT INTO passes (user_id, test_name, questions_amount) 
+                VALUES (?, ?, ?)
+            ''', (self.user_id, self.name, len(self.questions_array)))
+            pass_id = cursor.lastrowid
+
+            print(pass_id)
+            for question in self.questions_array:
+                cursor.execute('''
+                    INSERT INTO answers (user_id, pass_id, test_name, question, options, rightanswer, type, maxscore) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (self.user_id, pass_id, self.name, question[2], question[3], question[4], question[5], question[6]))
+            conn.commit()
+            conn.close()
+
+        except sqlite3.Error as e:
+            print("Ошибка SQLite:", e)
+
     def get_array(self):
         try:
             # Подключение к базе данных
