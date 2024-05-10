@@ -134,7 +134,7 @@ class TestPassing(QWidget):
                             user_id INTEGER,
                             test_name TEXT,
                             questions_amount INTEGER,
-                            score INTEGER,
+                            score TEXT,
                             FOREIGN KEY(user_id) REFERENCES users(id)
                         )
                     ''')
@@ -162,13 +162,32 @@ class TestPassing(QWidget):
             ''', (self.user_id, self.name, len(self.questions_array)))
             self.pass_id = cursor.lastrowid
 
-            print(self.pass_id)
+
             for question in self.questions_array:
+                if question[5] == 1:
+                    maxscore = question[6] * len(question[4].split(';'))
+                else:
+                    maxscore = question[6]
                 cursor.execute('''
-                    INSERT INTO answers (user_id, pass_id, test_name, question, options, rightanswer, type, maxscore) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (self.user_id, self.pass_id, self.name, question[2], question[3], question[4], question[5], question[6]))
+                    INSERT INTO answers (user_id, pass_id, test_name, question, options, rightanswer, type, getscore, maxscore) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (self.user_id, self.pass_id, self.name, question[2], question[3], question[4], question[5], 0, maxscore))
             conn.commit()
+            cursor.execute('''
+                SELECT SUM(maxscore) FROM answers 
+                WHERE user_id = ? AND pass_id = ?
+            ''', (self.user_id, self.pass_id))
+
+            # Получение результата запроса
+            self.total_max_score = cursor.fetchone()[0]
+
+            cursor.execute('''
+                UPDATE passes 
+                SET score = ? 
+                WHERE id = ?
+            ''', ("0/"+str(self.total_max_score), self.pass_id))
+            conn.commit()
+
             conn.close()
 
         except sqlite3.Error as e:
@@ -274,6 +293,10 @@ class TestPassing(QWidget):
                         answer_index1.append(date_edit.date().toString("dd.MM.yyyy"))
         print(answer_index1)
         getanswer = ";".join(answer_index1)
+        #Рассчет полученных баллов за ответ
+        for answer in answer_index1:
+            if answer in self.questions_array[self.question_number][4]:
+                getscore += self.questions_array[self.question_number][6]
         #ЗАПИСЬ
         try:
             conn = sqlite3.connect(folder_path)
@@ -297,6 +320,21 @@ class TestPassing(QWidget):
             ''', (getanswer, getscore, answer_id))
 
             # Сохраняем изменения в базе данных
+            conn.commit()
+
+            cursor.execute('''
+                            SELECT SUM(getscore) FROM answers 
+                            WHERE user_id = ? AND pass_id = ?
+                        ''', (self.user_id, self.pass_id))
+
+            # Получение результата запроса
+            total_getscore = cursor.fetchone()[0]
+
+            cursor.execute('''
+                            UPDATE passes 
+                            SET score = ? 
+                            WHERE id = ?
+                        ''', (str(total_getscore)+"/" + str(self.total_max_score), self.pass_id))
             conn.commit()
 
         except sqlite3.Error as e:

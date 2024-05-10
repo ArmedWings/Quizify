@@ -248,6 +248,7 @@ class QuestionEditor(QWidget):
                 new_date_edit.setDate(QDate.currentDate())
                 new_date_edit.setDisplayFormat("dd.MM.yyyy")
                 new_date_edit.setCalendarPopup(True)
+                new_date_edit.setStyleSheet("background: #2C2C2C; color: white")
 
                 # Создаем метку для удаления строки
                 delete_label = QLabel("❌", self)
