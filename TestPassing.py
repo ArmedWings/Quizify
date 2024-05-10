@@ -70,6 +70,7 @@ class TestPassing(QWidget):
 
         #Объявление и подгрузка первой страницы
         self.question_number = 0
+        self.total_getscore = 0
         self.question_load()
         #UI
         self.create_buttons()
@@ -297,6 +298,11 @@ class TestPassing(QWidget):
         for answer in answer_index1:
             if answer in self.questions_array[self.question_number][4]:
                 getscore += self.questions_array[self.question_number][6]
+            else:
+                #За ошибочный ответ в мультивыборе (лишний) вычитается в два раза больше баллов
+                getscore -= self.questions_array[self.question_number][6]*2
+        if getscore < 0:
+            getscore = 0
         #ЗАПИСЬ
         try:
             conn = sqlite3.connect(folder_path)
@@ -328,13 +334,13 @@ class TestPassing(QWidget):
                         ''', (self.user_id, self.pass_id))
 
             # Получение результата запроса
-            total_getscore = cursor.fetchone()[0]
+            self.total_getscore = cursor.fetchone()[0]
 
             cursor.execute('''
                             UPDATE passes 
                             SET score = ? 
                             WHERE id = ?
-                        ''', (str(total_getscore)+"/" + str(self.total_max_score), self.pass_id))
+                        ''', (str(self.total_getscore)+"/" + str(self.total_max_score), self.pass_id))
             conn.commit()
 
         except sqlite3.Error as e:
@@ -354,7 +360,28 @@ class TestPassing(QWidget):
             self.question_number = 0
         self.question_load()
     def end_button_handler(self):
-        pass
+        reply = QMessageBox.question(None, 'Завершить тестирование',
+                                     'Вы уверены, что хотите завершить тестирование? Вы не сможете продолжить',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            while self.main_window.main_layout.count():
+                item = self.main_window.main_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+            score_scaled = Funcs.score_scaled(self.total_getscore, self.total_max_score)
+            QMessageBox.information(None, "Результат",
+                                    f"Вы завершили тестирование с результатом:\n"
+                                    f"Получено баллов: {self.total_getscore}\n"
+                                    f"Максимум баллов: {self.total_max_score}\n"
+                                    f"Оценка по пятибалльной шкале: {score_scaled}",
+                                    QMessageBox.Ok)
+            from ModerPage import ModerPage
+            moder_page = ModerPage(main_window=self.main_window, gradient_color1="#6942D6", gradient_color2="#29B2D5", id=self.user_id)
+            self.main_window.main_layout.removeWidget(self)
+            self.main_window.main_layout.addWidget(moder_page)
 
     def clear_question_controls(self):
         while self.question_layout.count() > 0:
