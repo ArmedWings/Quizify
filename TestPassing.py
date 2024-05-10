@@ -89,17 +89,36 @@ class TestPassing(QWidget):
         self.clear_question_controls()
         self.label_editing.setText("Вопрос №" + str(self.question_number + 1))
         self.label_question.setText(self.questions_array[self.question_number][2])
-        for option in self.questions_array[self.question_number][3]:
+        if self.questions_array[self.question_number][5] < 2:
+            for option in self.questions_array[self.question_number][3]:
+                option_layout = QHBoxLayout()
+                new_option = QLabel(option)
+                new_option.setStyleSheet("font-size: 14pt")
+                if self.questions_array[self.question_number][5] == 0:
+                    new_radio = QRadioButton()
+                    option_layout.addWidget(new_radio)
+                elif self.questions_array[self.question_number][5] == 1:
+                    new_check = QCheckBox()
+                    option_layout.addWidget(new_check)
+                option_layout.addWidget(new_option)
+                option_layout.addStretch()
+                self.question_layout.addLayout(option_layout)
+        elif self.questions_array[self.question_number][5] == 2:
             option_layout = QHBoxLayout()
-            new_option = QLabel(option)
-            new_option.setStyleSheet("font-size: 14pt")
-            if self.questions_array[self.question_number][5] == 0:
-                new_radio = QRadioButton()
-                option_layout.addWidget(new_radio)
-            elif self.questions_array[self.question_number][5] == 1:
-                new_check = QCheckBox()
-                option_layout.addWidget(new_check)
-            option_layout.addWidget(new_option)
+            new_lineedit = QLineEdit()
+            self.apply_custom_style(new_lineedit)
+            option_layout.addWidget(new_lineedit)
+            option_layout.addStretch()
+            self.question_layout.addLayout(option_layout)
+        else:
+            option_layout = QHBoxLayout()
+            new_dateedit = QDateEdit()
+            new_dateedit.setStyleSheet("background: #2C2C2C; color: white")
+            new_dateedit.setCalendarPopup(True)
+            new_dateedit.setDate(QDate.currentDate())
+            new_dateedit.setDisplayFormat("dd.MM.yyyy")
+            new_dateedit.setFixedSize(150, 30)
+            option_layout.addWidget(new_dateedit)
             option_layout.addStretch()
             self.question_layout.addLayout(option_layout)
         self.question_layout.addStretch()
@@ -141,14 +160,14 @@ class TestPassing(QWidget):
                 INSERT INTO passes (user_id, test_name, questions_amount) 
                 VALUES (?, ?, ?)
             ''', (self.user_id, self.name, len(self.questions_array)))
-            pass_id = cursor.lastrowid
+            self.pass_id = cursor.lastrowid
 
-            print(pass_id)
+            print(self.pass_id)
             for question in self.questions_array:
                 cursor.execute('''
                     INSERT INTO answers (user_id, pass_id, test_name, question, options, rightanswer, type, maxscore) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (self.user_id, pass_id, self.name, question[2], question[3], question[4], question[5], question[6]))
+                ''', (self.user_id, self.pass_id, self.name, question[2], question[3], question[4], question[5], question[6]))
             conn.commit()
             conn.close()
 
@@ -217,10 +236,73 @@ class TestPassing(QWidget):
         self.main_layout.addLayout(buttons_layout)
 
     def answer_button_handler(self):
-        #if self.questions_array[2][4][0] == '':
-            #print('Пусто')
+        folder_path = Funcs.get_path()
 
-        pass
+        #ПОДСЧЕТ БАЛЛОВ ЗА КОНКРЕТНЫЙ ВОПРОС
+        getscore = 0
+        answer_type_index = self.questions_array[self.question_number][5]
+        answer_index1 = []  # Создаем массив для хранения ответов в случае индекса 1
+
+        # Перебор элементов в self.question_layout
+        for i in range(self.question_layout.count()):
+            vbox_layout = self.question_layout.itemAt(i).layout()
+            if isinstance(vbox_layout, QtWidgets.QHBoxLayout):  # Проверка на QHBoxLayout
+                if answer_type_index == 0:  # Если индекс = 0
+                    # Получаем чекнутый радио-баттон из текущего QHBoxLayout
+                    radio_button = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
+                    if isinstance(radio_button,
+                                  QtWidgets.QRadioButton) and radio_button.isChecked():  # Проверка на QRadioButton и чекнутость
+                        # Получаем текст из QLineEdit, следующего за радио-баттоном
+                        line_edit = vbox_layout.itemAt(1).widget()  # Второй элемент в компоновщике
+                        if isinstance(line_edit, QtWidgets.QLabel):
+                            answer_index1.append(line_edit.text())
+                elif answer_type_index == 1:  # Если индекс = 1
+                    radio_button = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
+                    if isinstance(radio_button,
+                                  QtWidgets.QCheckBox) and radio_button.isChecked():  # Проверка на QRadioButton и чекнутость
+                        # Получаем текст из QLineEdit, следующего за радио-баттоном
+                        line_edit = vbox_layout.itemAt(1).widget()  # Второй элемент в компоновщике
+                        if isinstance(line_edit, QtWidgets.QLabel):
+                            answer_index1.append(line_edit.text())  # Добавляем значение в массив
+                elif answer_type_index == 2:  # Если индекс = 2
+                    line_edit = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
+                    if isinstance(line_edit, QtWidgets.QLineEdit):
+                        answer_index1.append(line_edit.text())  # Добавляем значение в массив
+                elif answer_type_index == 3:  # Если индекс = 3
+                    date_edit = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
+                    if isinstance(date_edit, QtWidgets.QDateEdit):
+                        answer_index1.append(date_edit.date().toString("dd.MM.yyyy"))
+        print(answer_index1)
+        getanswer = ";".join(answer_index1)
+        #ЗАПИСЬ
+        try:
+            conn = sqlite3.connect(folder_path)
+            cursor = conn.cursor()
+
+            # Получаем id записи в таблице answers для указанного порядкового номера вопроса
+            cursor.execute('''
+                SELECT id 
+                FROM answers 
+                WHERE user_id=? AND pass_id=? 
+                LIMIT 1 OFFSET ?
+            ''', (self.user_id, self.pass_id, self.question_number))
+
+            answer_id = cursor.fetchone()[0]
+
+            # Обновляем данные в таблице answers
+            cursor.execute('''
+                UPDATE answers 
+                SET getanswer=?, getscore=? 
+                WHERE id=?
+            ''', (getanswer, getscore, answer_id))
+
+            # Сохраняем изменения в базе данных
+            conn.commit()
+
+        except sqlite3.Error as e:
+            print("Ошибка SQLite:", e)
+        finally:
+            conn.close()
     def prev_button_handler(self):
         if self.question_number > 0:
             self.question_number -= 1
@@ -280,3 +362,17 @@ class TestPassing(QWidget):
         painter.end()
 
         return pixmap
+    def apply_custom_style(self, widget):
+        widget.setStyleSheet(
+                    '''
+                QLineEdit {
+                        background-color: #2C2C2C; /* темно-серый цвет поля ввода */
+                        border: 1px solid #7E7E7E; /* цвет рамки */
+                        color: white; /* белый цвет текста */
+                        selection-background-color: #0078D7; /* цвет выделенного текста */
+                        font-size: 20px;
+                    }
+                    QLineEdit:focus {
+                        border: 2px solid #0078D7; /* цвет рамки при фокусе */
+                    }
+                ''')
