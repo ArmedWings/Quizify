@@ -79,7 +79,7 @@ class ModerPage(QWidget):
         back_icon_pixmap = self.load_and_render_svg(back_icon_path, self.gradient_color1, self.gradient_color2)
         back_icon_pixmap = back_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
         self.back_icon.setPixmap(back_icon_pixmap)
-        self.back_icon.mousePressEvent = self.fill_frame2_tests
+        self.back_icon.mousePressEvent = self.back_icon_handler
         back_size = back_icon_pixmap.size()
         self.back_icon.setCursor(Qt.PointingHandCursor)
         self.back_icon.setFixedSize(back_size)
@@ -99,17 +99,32 @@ class ModerPage(QWidget):
         self.resizeEvent = self.on_resize
         self.adjust_label_position()
 
+    def back_icon_handler(self, *event):
+        self.fill_frame2_tests()
+        self.fill_frame1_users()
     def user_button_handler(self, id):
         self.fill_frame2_passed_tests(id)
         self.back_icon.setVisible(True)
-
+    def pass_button_handler(self, pass_id, *event):
+        if self.id == 1:
+            self.fill_frame1_answers(pass_id)
     def fill_frame1_allowed_tests(self):
         # Очистка всего содержимого frame1_layout
         while self.frame1_layout.count():
             item = self.frame1_layout.takeAt(0)
             widget = item.widget()
+            layout = item.layout()
+
             if widget:
                 widget.deleteLater()
+            elif layout:
+                # Рекурсивно удаляем все виджеты из layout
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                layout.deleteLater()  # Удаляем layout
 
         self.frame1_layout.addSpacing(10)
         label_users = QLabel("Доступные тестирования", self.frame1)
@@ -205,13 +220,12 @@ class ModerPage(QWidget):
         user_name = cursor.fetchone()
 
         self.frame2_layout.addSpacing(10)
-        label_user = QLabel(user_name[0], self.frame1)
+        label_user = QLabel("Пользователь: "+user_name[0][:20] + "..." if len(user_name[0]) > 20 else "Пользователь: "+user_name[0], self.frame1)
         label_user.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label_user.setStyleSheet("font-size: 14pt;")
         self.frame2_layout.addWidget(label_user)
-        self.frame2_layout.addSpacing(10)
 
-        self.frame2_layout.addSpacing(10)
+        self.frame2_layout.addSpacing(8)
         label_users = QLabel("Пройденные тестирования", self.frame1)
         label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label_users.setStyleSheet("font-size: 16pt;")
@@ -228,8 +242,8 @@ class ModerPage(QWidget):
         h_layout.addWidget(label_passed_tests)
         self.frame2_layout.addLayout(h_layout)
 
-        # Запрос на получение данных о пользователях, кроме первого
-        cursor.execute("SELECT test_name, score FROM passes WHERE user_id = ?", (user_id,))
+        # Запрос на получение данных о пройденных тестах юзера
+        cursor.execute("SELECT test_name, score, id FROM passes WHERE user_id = ?", (user_id,))
         passes = cursor.fetchall()
         passes = reversed(passes)
 
@@ -241,7 +255,7 @@ class ModerPage(QWidget):
         scroll_widget_layout = QVBoxLayout(scroll_widget)
         # scroll_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Создание кнопок для каждого пользователя
+        # Создание кнопок для каждого прохождения
         for attempt in passes:
             attempt_button = DualTextButton(attempt[0], attempt[1], self)
             Funcs.set_style_scaled(attempt_button, attempt[1])
@@ -251,7 +265,7 @@ class ModerPage(QWidget):
             attempt_button.leaveEvent = lambda event, element=attempt_button, score=attempt[1]: Funcs.hovered_style_scaled(
                 element, score, event)
             attempt_button.setCursor(Qt.PointingHandCursor)
-            #test_button.clicked.connect()  # Соединяем сигнал clicked с обработчиком
+            attempt_button.clicked.connect(lambda checked, id_prop=attempt[2]: self.pass_button_handler(id_prop))
             scroll_widget_layout.addWidget(attempt_button)
         scroll_widget_layout.addStretch()
         # Устанавливаем виджет в QScrollArea
@@ -271,8 +285,18 @@ class ModerPage(QWidget):
         while self.frame1_layout.count():
             item = self.frame1_layout.takeAt(0)
             widget = item.widget()
+            layout = item.layout()
+
             if widget:
                 widget.deleteLater()
+            elif layout:
+                # Рекурсивно удаляем все виджеты из layout
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                layout.deleteLater()  # Удаляем layout
 
         self.frame1_layout.addSpacing(10)
         label_users = QLabel("Пользователи", self.frame1)
@@ -319,7 +343,6 @@ class ModerPage(QWidget):
             user_button.leaveEvent = lambda event, button=user_button: button.setStyleSheet(
                 "font-size: 14pt; background-color: #191919; border: 1px solid #7E7E7E;")  # Возвращаем стиль при уходе мыши
             user_button.setCursor(Qt.PointingHandCursor)
-            user_button.setProperty("id", id_property)
             user_button.clicked.connect(lambda checked, id_prop=id_property: self.user_button_handler(id_prop))
             scroll_widget_layout.addWidget(user_button)
             id_property -= 1
@@ -420,6 +443,87 @@ class ModerPage(QWidget):
         # Добавляем QScrollArea в ваш текущий макет
         self.frame2_layout.addWidget(scroll_area)
         #self.frame2_layout.addStretch()
+
+    def fill_frame1_answers(self, pass_id, *event):
+        print(pass_id)
+        # Очистка всего содержимого frame1_layout
+        while self.frame1_layout.count():
+            item = self.frame1_layout.takeAt(0)
+            widget = item.widget()
+            layout = item.layout()
+
+            if widget:
+                widget.deleteLater()
+            elif layout:
+                # Рекурсивно удаляем все виджеты из layout
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget:
+                        widget.deleteLater()
+                layout.deleteLater()  # Удаляем layout
+
+
+        folder_path = Funcs.get_path()
+
+        conn = sqlite3.connect(folder_path)
+        cursor = conn.cursor()
+
+        # Запрос на получение данных о пользователях, кроме первого
+        cursor.execute("SELECT test_name, question, getanswer, rightanswer, getscore, maxscore FROM answers WHERE pass_id = ?", (pass_id,))
+        users = cursor.fetchall()
+
+        self.frame1_layout.addSpacing(10)
+        label_testname = QLabel("Тест: "+users[0][0][:20] + "..." if len(users[0][0]) > 20 else "Тест: "+users[0][0], self.frame1)
+        label_testname.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_testname.setStyleSheet("font-size: 12pt;")
+        self.frame1_layout.addWidget(label_testname)
+
+        self.frame1_layout.addSpacing(10)
+        label_users = QLabel("Полученные ответы", self.frame1)
+        label_users.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label_users.setStyleSheet("font-size: 16pt;")
+        self.frame1_layout.addWidget(label_users)
+        self.frame1_layout.addSpacing(10)
+
+        h_layout = QHBoxLayout()
+        label_user = QLabel("Вопрос", self.frame1)
+        label_user.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_user)
+        h_layout.addStretch()
+        label_passed_tests = QLabel("Баллов", self.frame1)
+        label_passed_tests.setStyleSheet("font-size: 14pt;")
+        h_layout.addWidget(label_passed_tests)
+        self.frame1_layout.addLayout(h_layout)
+        # Создаем экземпляр QScrollArea
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)  # Позволяет автоматически изменять размеры области прокрутки
+
+        # Создаем виджет, который будет содержать кнопки
+        scroll_widget = QWidget()
+        scroll_widget_layout = QVBoxLayout(scroll_widget)
+        # Создание кнопок для каждого пользователя
+        for user in users:
+            user_button = DualTextButton(user[1][:40] + "..." if len(user[1]) > 40 else user[1], str(user[4])+"/"+str(user[5]), self.frame1)
+            Funcs.set_style_scaled(user_button, str(user[4])+"/"+str(user[5]))
+            user_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
+            user_button.enterEvent = lambda event, element=user_button, score=str(user[4])+"/"+str(user[5]): Funcs.hovered_style_scaled(
+                element, score, event)
+            user_button.leaveEvent = lambda event, element=user_button,score=str(user[4])+"/"+str(user[5]): Funcs.hovered_style_scaled(
+                element, score, event)
+            user_button.setCursor(Qt.PointingHandCursor)
+            #user_button.clicked.connect(lambda checked, id_prop=id_property: self.user_button_handler(id_prop))
+            scroll_widget_layout.addWidget(user_button)
+        scroll_widget_layout.addStretch()
+
+        # Устанавливаем виджет в QScrollArea
+        scroll_area.setWidget(scroll_widget)
+
+        scroll_area.viewport().setStyleSheet("background: #1C1B1B; border: none;")
+        conn.close()
+
+        # Добавляем QScrollArea в ваш текущий макет
+        self.frame1_layout.addWidget(scroll_area)
 
     def to_testpassing(self):
         sender_button = self.sender()  # Получаем отправителя сигнала
