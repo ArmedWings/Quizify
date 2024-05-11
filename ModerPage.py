@@ -115,6 +115,7 @@ class ModerPage(QWidget):
                                 f"Правильный ответ: {data[3]}\n"
                                 f"Получено баллов: {data[4]}\n"
                                 f"Максимум баллов: {data[5]}\n"
+                                f"Оценка по пятибалльной шкале: {Funcs.score_scaled(data[4], data[5])}\n"
                                 "Баллы начисляются за каждое совпадение с любым правильным ответом",
                                 QMessageBox.Ok)
     def fill_frame1_allowed_tests(self):
