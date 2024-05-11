@@ -29,6 +29,7 @@ class Auth(QWidget):
         back_icon_pixmap = self.load_and_render_svg(back_icon_path, self.gradient_color1, self.gradient_color2)
         back_icon_pixmap = back_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
         self.back_icon.setPixmap(back_icon_pixmap)
+        self.back_icon.setCursor(Qt.PointingHandCursor)
         #self.back_icon.mousePressEvent = self.back_icon_clicked
 
 
@@ -39,6 +40,7 @@ class Auth(QWidget):
         settings_icon_pixmap = settings_icon_pixmap.scaled(QSize(50, 50), Qt.KeepAspectRatio)
         self.settings_icon.setPixmap(settings_icon_pixmap)
         self.settings_icon.mousePressEvent = self.clear_layout_out
+        self.settings_icon.setCursor(Qt.PointingHandCursor)
 
         image_size = back_icon_pixmap.size()
         self.back_icon.setFixedSize(image_size)
@@ -114,6 +116,7 @@ class Auth(QWidget):
         # Создаем кнопку
         button_register = QPushButton("Зарегистрировать аккаунт модератора", self.frame)
         button_register.setStyleSheet("font-size: 18px;")
+        button_register.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_register)
 
         # Отступ
@@ -133,6 +136,7 @@ class Auth(QWidget):
         # Кнопка "Импортировать данные пользователей"
         button_import = QPushButton("Импортировать данные пользователей", self.frame)
         button_import.setStyleSheet("font-size: 18px;")
+        button_import.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_import)
 
         button_register.setFixedWidth(400)
@@ -203,6 +207,7 @@ class Auth(QWidget):
         # Создаем кнопку "Подтвердить"
         button_confirm = QPushButton("Подтвердить", self.frame)
         button_confirm.setStyleSheet("font-size: 18px;")
+        button_confirm.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_confirm)
 
         # Помещаем кнопку по центру
@@ -314,6 +319,7 @@ class Auth(QWidget):
         # Создаем кнопку "Подтвердить"
         button_confirm = QPushButton("Подтвердить", self.frame)
         button_confirm.setStyleSheet("font-size: 18px;")
+        button_confirm.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_confirm)
 
         # Помещаем кнопку по центру
@@ -460,6 +466,7 @@ class Auth(QWidget):
         self.button_choose_folder = QPushButton("Выбрать папку для сохранения данных", self.frame)
         self.button_choose_folder.setStyleSheet("font-size: 18px;")
         frame_layout.addWidget(self.button_choose_folder)
+        self.button_choose_folder.setCursor(Qt.PointingHandCursor)
         self.button_choose_folder.setFixedHeight(50)  # Изменяем высоту кнопки
 
         # Отступ между кнопками
@@ -468,6 +475,7 @@ class Auth(QWidget):
         # Создаем кнопку "Подтвердить"
         button_confirm = QPushButton("Подтвердить", self.frame)
         button_confirm.setStyleSheet("font-size: 18px;")
+        button_confirm.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_confirm)
 
         # Помещаем кнопки по центру
@@ -630,6 +638,7 @@ class Auth(QWidget):
         # Создаем кнопку
         button_login = QPushButton("Войти", self.frame)
         button_login.setStyleSheet("font-size: 18px;")
+        button_login.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_login)
 
         spacer_label = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -638,6 +647,7 @@ class Auth(QWidget):
         # Кнопка "Импортировать данные пользователей"
         button_register = QPushButton("Зарегистрироваться", self.frame)
         button_register.setStyleSheet("font-size: 18px;")
+        button_register.setCursor(Qt.PointingHandCursor)
         frame_layout.addWidget(button_register)
 
         # Ширина кнопки = максимальная доступная по фрейму
