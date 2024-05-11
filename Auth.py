@@ -134,9 +134,10 @@ class Auth(QWidget):
         frame_layout.addItem(spacer_button)
 
         # Кнопка "Импортировать данные пользователей"
-        button_import = QPushButton("Импортировать данные пользователей", self.frame)
+        button_import = QPushButton("Импортировать данные", self.frame)
         button_import.setStyleSheet("font-size: 18px;")
         button_import.setCursor(Qt.PointingHandCursor)
+        button_import.clicked.connect(self.open_file_dialog)
         frame_layout.addWidget(button_import)
 
         button_register.setFixedWidth(400)
@@ -148,6 +149,35 @@ class Auth(QWidget):
         # Подключаем обработчик события нажатия на кнопку
         button_register.clicked.connect(self.handle_register_click)
         self.back_icon.mousePressEvent = self.clear_layout_out
+
+    def open_file_dialog(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setFileMode(QFileDialog.ExistingFile)
+        file_dialog.setNameFilter("Database files (*.db)")
+
+        if file_dialog.exec():
+            file_paths = file_dialog.selectedFiles()
+            if file_paths:
+                file_path = file_paths[0]
+                if self.check_users_table(file_path):
+                    with open("config.txt", "r") as file:
+                        lines = file.readlines()
+                    if len(lines) >= 2:
+                        # Замена второй строки
+                        lines[1] = f"catalog={file_path}\n"
+                    else:
+                        # Если не хватает строк, добавляем новую строку
+                        lines.append(f"catalog={file_path}\n")
+
+                    # Запись изменений в файл
+                    with open("config.txt", "w") as file:
+                        file.writelines(lines)
+                    self.fill_frame_welcome()
+                else:
+                    QMessageBox.critical(None, "Ошибка",
+                                            "Ошибка импорта базы данных",
+                                            QMessageBox.Ok)
+
 
     def handle_register_click(self):
         # Здесь можно выполнить дополнительные действия
@@ -656,7 +686,6 @@ class Auth(QWidget):
         spacer_label = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
         frame_layout.addItem(spacer_label)
 
-        # Кнопка "Импортировать данные пользователей"
         button_register = QPushButton("Зарегистрироваться", self.frame)
         button_register.setStyleSheet("font-size: 18px;")
         button_register.setCursor(Qt.PointingHandCursor)
