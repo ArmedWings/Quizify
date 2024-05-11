@@ -108,6 +108,15 @@ class ModerPage(QWidget):
     def pass_button_handler(self, pass_id, *event):
         if self.id == 1:
             self.fill_frame1_answers(pass_id)
+    def answer_button_handler(self, data, *event):
+        QMessageBox.information(None, "Детальная информация",
+                                f"Вопрос: {data[1]}\n"
+                                f"Полученный ответ: {data[2]}\n"
+                                f"Правильный ответ: {data[3]}\n"
+                                f"Получено баллов: {data[4]}\n"
+                                f"Максимум баллов: {data[5]}\n"
+                                "Баллы начисляются за каждое совпадение с любым правильным ответом",
+                                QMessageBox.Ok)
     def fill_frame1_allowed_tests(self):
         # Очистка всего содержимого frame1_layout
         while self.frame1_layout.count():
@@ -471,10 +480,10 @@ class ModerPage(QWidget):
 
         # Запрос на получение данных о пользователях, кроме первого
         cursor.execute("SELECT test_name, question, getanswer, rightanswer, getscore, maxscore FROM answers WHERE pass_id = ?", (pass_id,))
-        users = cursor.fetchall()
+        answers = cursor.fetchall()
 
         self.frame1_layout.addSpacing(10)
-        label_testname = QLabel("Тест: "+users[0][0][:20] + "..." if len(users[0][0]) > 20 else "Тест: "+users[0][0], self.frame1)
+        label_testname = QLabel("Тест: "+answers[0][0][:20] + "..." if len(answers[0][0]) > 20 else "Тест: "+answers[0][0], self.frame1)
         label_testname.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label_testname.setStyleSheet("font-size: 12pt;")
         self.frame1_layout.addWidget(label_testname)
@@ -503,16 +512,16 @@ class ModerPage(QWidget):
         scroll_widget = QWidget()
         scroll_widget_layout = QVBoxLayout(scroll_widget)
         # Создание кнопок для каждого пользователя
-        for user in users:
-            user_button = DualTextButton(user[1][:40] + "..." if len(user[1]) > 40 else user[1], str(user[4])+"/"+str(user[5]), self.frame1)
-            Funcs.set_style_scaled(user_button, str(user[4])+"/"+str(user[5]))
+        for answer in answers:
+            user_button = DualTextButton(answer[1][:40] + "..." if len(answer[1]) > 40 else answer[1], str(answer[4])+"/"+str(answer[5]), self.frame1)
+            Funcs.set_style_scaled(user_button, str(answer[4])+"/"+str(answer[5]))
             user_button.setProperty("hovered", False)  # Устанавливаем начальное значение свойства для кнопки
-            user_button.enterEvent = lambda event, element=user_button, score=str(user[4])+"/"+str(user[5]): Funcs.hovered_style_scaled(
+            user_button.enterEvent = lambda event, element=user_button, score=str(answer[4])+"/"+str(answer[5]): Funcs.hovered_style_scaled(
                 element, score, event)
-            user_button.leaveEvent = lambda event, element=user_button,score=str(user[4])+"/"+str(user[5]): Funcs.hovered_style_scaled(
+            user_button.leaveEvent = lambda event, element=user_button,score=str(answer[4])+"/"+str(answer[5]): Funcs.hovered_style_scaled(
                 element, score, event)
             user_button.setCursor(Qt.PointingHandCursor)
-            #user_button.clicked.connect(lambda checked, id_prop=id_property: self.user_button_handler(id_prop))
+            user_button.clicked.connect(lambda checked, data=answer: self.answer_button_handler(data))
             scroll_widget_layout.addWidget(user_button)
         scroll_widget_layout.addStretch()
 
