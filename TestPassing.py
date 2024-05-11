@@ -77,6 +77,9 @@ class TestPassing(QWidget):
 
     def page_init(self):
         print(self.questions_array)
+        self.blacklist = set()
+        self.whitelist = set(range(len(self.questions_array)))
+        random.shuffle(self.questions_array)
         for i in range(len(self.questions_array)):
             first, second, third, fourth, fifth, *rest = self.questions_array[i]  # Разбиваем элементы на отдельные переменные
             fourth_elements = list(fourth.split(';')) if isinstance(fourth,
@@ -334,19 +337,38 @@ class TestPassing(QWidget):
             print("Ошибка SQLite:", e)
         finally:
             conn.close()
+            self.blacklist.add(self.question_number)
+            self.whitelist.discard(self.question_number)
             self.next_button_handler()
     def prev_button_handler(self):
-        if self.question_number > 0:
-            self.question_number -= 1
+        print(self.whitelist)
+        print(self.blacklist)
+        if not self.whitelist:
+            self.end_button_handler()
         else:
-            self.question_number = len(self.questions_array)-1
-        self.question_load()
+            if self.question_number > 0:
+                self.question_number -= 1
+            else:
+                self.question_number = len(self.questions_array)-1
+            if self.question_number in self.blacklist:
+                self.prev_button_handler()
+            else:
+                self.question_load()
     def next_button_handler(self):
-        if self.question_number < len(self.questions_array)-1:
-            self.question_number += 1
+        print(self.question_number)
+        print(self.whitelist)
+        print(self.blacklist)
+        if not self.whitelist:
+            self.end_button_handler()
         else:
-            self.question_number = 0
-        self.question_load()
+            if self.question_number < len(self.questions_array)-1:
+                self.question_number += 1
+            else:
+                self.question_number = 0
+            if self.question_number in self.blacklist:
+                self.next_button_handler()
+            else:
+                self.question_load()
     def end_button_handler(self):
         reply = QMessageBox.question(None, 'Завершить тестирование',
                                      'Вы уверены, что хотите завершить тестирование? Вы не сможете продолжить',
