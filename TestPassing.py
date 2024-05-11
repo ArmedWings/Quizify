@@ -242,7 +242,8 @@ class TestPassing(QWidget):
         getscore = 0
         answer_type_index = self.questions_array[self.question_number][5]
         answer_index1 = []  # Создаем массив для хранения ответов в случае индекса 1
-
+        valid_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=[]{}|:,.<>?абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ")
         # Перебор элементов в self.question_layout
         for i in range(self.question_layout.count()):
             vbox_layout = self.question_layout.itemAt(i).layout()
@@ -267,7 +268,13 @@ class TestPassing(QWidget):
                 elif answer_type_index == 2:  # Если индекс = 2
                     line_edit = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
                     if isinstance(line_edit, QtWidgets.QLineEdit):
+                        if not all(char in valid_chars for char in line_edit.text()):
+                            QMessageBox.warning(None, "Предупреждение",
+                                                "Ответ содержит неподдерживаемые символы",
+                                                QMessageBox.Ok)
+                            return
                         answer_index1.append(line_edit.text())  # Добавляем значение в массив
+
                 elif answer_type_index == 3:  # Если индекс = 3
                     date_edit = vbox_layout.itemAt(0).widget()  # Первый элемент в компоновщике
                     if isinstance(date_edit, QtWidgets.QDateEdit):

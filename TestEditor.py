@@ -199,6 +199,13 @@ class TestEditor(QWidget):
             QMessageBox.warning(None, 'Сохранение',
                                          'Заполните поле "Время на прохождение теста"')
             return
+        valid_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=[]{}|:,.<>?абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ")
+        if not all(char in valid_chars for char in self.test_name_edit.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Название содержит неподдерживаемые символы",
+                                QMessageBox.Ok)
+            return
         if self.check_for_changes():
             # Если есть изменения, спросить пользователя, хочет ли он сохранить их
             reply = QMessageBox.question(None, 'Сохранение',
@@ -243,6 +250,12 @@ class TestEditor(QWidget):
             QMessageBox.warning(None, 'Сохранение',
                                          'Заполните поле "Время на прохождение теста"')
             return
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=[]{}|:,.<>?абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ")
+        if not all(char in valid_chars for char in self.test_name_edit.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Название содержит неподдерживаемые символы",
+                                QMessageBox.Ok)
+            return
         # Чтение пути к папке с базой данных из файла конфигурации
         folder_path = Funcs.get_path()
         # Создание пути к файлу базы данных
@@ -268,17 +281,16 @@ class TestEditor(QWidget):
         attempts = self.attempts_edit.text()
         time = self.time_edit.time().toString("HH:mm:ss")
         amount = self.question_count
-        visible = "False"  # Устанавливаем значение "False" для новой записи
 
         # Проверка, создавать новую запись или редактировать существующую
         if self.name is None:
             # Создание новой записи
-            cursor.execute("INSERT INTO tests (name, attempts, time, amount, visible) VALUES (?, ?, ?, ?, ?)",
-                           (name, attempts, time, amount, visible))
+            cursor.execute("INSERT INTO tests (name, attempts, time, amount) VALUES (?, ?, ?, ?)",
+                           (name, attempts, time, amount))
         else:
             # Редактирование существующей записи
-            cursor.execute("UPDATE tests SET name=?, attempts=?, time=?, amount=?, visible=? WHERE name=?",
-                           (name, attempts, time, amount, visible, self.name))
+            cursor.execute("UPDATE tests SET name=?, attempts=?, time=?, amount=? WHERE name=?",
+                           (name, attempts, time, amount, self.name))
         self.name=name
         conn.commit()
         conn.close()

@@ -608,9 +608,16 @@ class QuestionEditor(QWidget):
 
         all_fields_filled = True
         radio_button_checked = False
+        valid_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=[]{}|:,.<>?абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ")
         if self.test_name_edit.text() == "":
             QMessageBox.warning(None, 'Ошибка сохранения',
                                 'Заполните поле: "Введите вопрос"')
+            return False
+        if not all(char in valid_chars for char in self.test_name_edit.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Название содержит неподдерживаемые символы",
+                                QMessageBox.Ok)
             return False
         if self.score_edit.text() == "":
             QMessageBox.warning(None, 'Ошибка сохранения',
@@ -626,6 +633,11 @@ class QuestionEditor(QWidget):
                     if isinstance(line_edit, QtWidgets.QLineEdit):
                         if line_edit.text().strip() == "":
                             all_fields_filled = False
+                        if not all(char in valid_chars for char in line_edit.text()):
+                            QMessageBox.warning(None, "Предупреждение",
+                                                "Варианты ответов содержат неподдерживаемые символы",
+                                                QMessageBox.Ok)
+                            return False
                 if self.answer_type_combo.currentIndex() == 0:
                     checkbox = qhbox.itemAt(0).widget()
                     if isinstance(checkbox, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
