@@ -184,7 +184,7 @@ class GroupWidget(QWidget):
         if self.outer_frame.rect().contains(cursor_pos.toPoint()):
             # Ваш код для обработки события нажатия на внешний фрейм
             print(f"Нажатие на внешний фрейм {index}")
-            if index < 3:
+            if index == 1:
                 try:
                     with open("config.txt", "r") as file:
                         lines = file.readlines()
