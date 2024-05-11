@@ -350,16 +350,25 @@ class Auth(QWidget):
             return
 
         # Проверка на наличие недопустимых символов
-        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
-        for line_edit in line_edits:
-            text = line_edit.text()
-            if not all(char in valid_chars for char in text):
-                msg_box = QMessageBox()
-                msg_box.setWindowTitle("Предупреждение")
-                msg_box.setText("Можно вводить только латиницу, цифры и допустимые символы!")
-                msg_box.setIcon(QMessageBox.Warning)
-                msg_box.exec_()
-                return
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        if not all(char in valid_chars for char in self.line_edit2.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Логин может состоять только из латиницы и цифр",
+                                QMessageBox.Ok)
+            return
+        valid_chars.update("!@#$%^&*()_-+=[]{}|:,.<>?")
+        # Проверка на наличие недопустимых символов ПАРОЛЯ
+        if not all(char in valid_chars for char in self.line_edit3.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Пароль может состоять только из латиницы, цифр и некоторых символов",
+                                QMessageBox.Ok)
+            return
+        valid_chars.update("абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ")
+        if not all(char in valid_chars for char in self.line_edit1.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Поле \"Имя\" может состоять только из латиницы, кириллицы, цифр и некоторых символов",
+                                QMessageBox.Ok)
+            return
 
         # Проверка существования пользователя в базе данных
         login = self.line_edit2.text()
@@ -522,17 +531,20 @@ class Auth(QWidget):
             msg_box.exec_()
             return
 
-        # Проверка на наличие недопустимых символов
-        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
-        for line_edit in line_edits:
-            text = line_edit.text()
-            if not all(char in valid_chars for char in text):
-                msg_box = QMessageBox()
-                msg_box.setWindowTitle("Предупреждение")
-                msg_box.setText("Можно вводить только латиницу, цифры и допустимые символы!")
-                msg_box.setIcon(QMessageBox.Warning)
-                msg_box.exec_()
-                return
+        # Проверка на наличие недопустимых символов ЛОГИНА
+        valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        if not all(char in valid_chars for char in self.line_edit1.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Логин может состоять только из латиницы и цифр",
+                                QMessageBox.Ok)
+            return
+        valid_chars.update("!@#$%^&*()_-+=[]{}|:,.<>?")
+        # Проверка на наличие недопустимых символов ПАРОЛЯ
+        if not all(char in valid_chars for char in self.line_edit2.text()):
+            QMessageBox.warning(None, "Предупреждение",
+                                "Пароль может состоять только из латиницы, цифр и некоторых символов",
+                                QMessageBox.Ok)
+            return
 
         # Если все проверки пройдены успешно, выводим сообщение об успешном сохранении
         print("Все данные заполнены корректно.")
