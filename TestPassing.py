@@ -79,12 +79,13 @@ class TestPassing(QWidget):
         print(self.questions_array)
         for i in range(len(self.questions_array)):
             first, second, third, fourth, fifth, *rest = self.questions_array[i]  # Разбиваем элементы на отдельные переменные
-            fourth_elements = tuple(fourth.split(';')) if isinstance(fourth,
+            fourth_elements = list(fourth.split(';')) if isinstance(fourth,
                                                                    str) else fourth  # Разбиваем третий элемент, если он строка
-            fifth_elements = tuple(fifth.split(';')) if isinstance(fifth,
+            fifth_elements = list(fifth.split(';')) if isinstance(fifth,
                                                                      str) else fifth  # Разбиваем четвертый элемент, если он строка
+            random.shuffle(fourth_elements)
+            random.shuffle(fifth_elements)
             self.questions_array[i] = (first, second, third, fourth_elements, fifth_elements, *rest)  # Обновляем элементы внутреннего списка
-        #random.shuffle(self.questions_array)
 
     def question_load(self):
         self.clear_question_controls()
