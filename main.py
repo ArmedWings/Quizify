@@ -2,7 +2,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, \
     QSizePolicy, QSpacerItem, QGraphicsOpacityEffect, QMessageBox
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve, QRect, QMargins, QTimer, QSequentialAnimationGroup, QCoreApplication, Signal, QPoint
-from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor
+from PySide6.QtGui import QPixmap, QPainter, QBrush, QLinearGradient, QColor, QImage, QPalette, QPen, QCursor, QIcon
 from cryptography.fernet import Fernet
 from ModerPage import ModerPage
 from Auth import Auth
@@ -211,7 +211,8 @@ class GroupWidget(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Группы кнопок")
+        self.setWindowTitle("Quizify")
+        self.setWindowIcon(QIcon("icons/icon.ico"))
         self.setMinimumSize(1000, 600)
         self.key = self.load_or_generate_key()
 
